@@ -3625,6 +3625,23 @@
   },
   {
     "id": 166,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*://*.youtube.com/youtubei/v1/player/ad_break*",
+      "resourceTypes": [
+        "script",
+        "sub_frame",
+        "xmlhttprequest",
+        "image",
+        "other"
+      ]
+    }
+  },
+  {
+    "id": 167,
     "priority": 2,
     "action": {
       "type": "block"
@@ -3640,7 +3657,7 @@
     }
   },
   {
-    "id": 167,
+    "id": 168,
     "priority": 2,
     "action": {
       "type": "block"
@@ -3656,7 +3673,7 @@
     }
   },
   {
-    "id": 168,
+    "id": 169,
     "priority": 2,
     "action": {
       "type": "block"
@@ -3672,7 +3689,7 @@
     }
   },
   {
-    "id": 169,
+    "id": 170,
     "priority": 2,
     "action": {
       "type": "block"
@@ -3688,7 +3705,7 @@
     }
   },
   {
-    "id": 170,
+    "id": 171,
     "priority": 2,
     "action": {
       "type": "block"
@@ -3704,7 +3721,7 @@
     }
   },
   {
-    "id": 171,
+    "id": 172,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -3716,30 +3733,6 @@
       "urlFilter": "||vietcombank-online-banking.top^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 172,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||vietcombank-online-banking.top^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -3747,15 +3740,23 @@
     "id": 173,
     "priority": 20,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/warning/warning.html"
-      }
+      "type": "block"
     },
     "condition": {
-      "urlFilter": "||techcombank-verify.vip^",
+      "urlFilter": "||vietcombank-online-banking.top^",
       "resourceTypes": [
-        "main_frame"
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
       ]
     }
   },
@@ -3763,6 +3764,22 @@
     "id": 174,
     "priority": 20,
     "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/warning/warning.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||techcombank-verify.vip^",
+      "resourceTypes": [
+        "main_frame"
+      ]
+    }
+  },
+  {
+    "id": 175,
+    "priority": 20,
+    "action": {
       "type": "block"
     },
     "condition": {
@@ -3784,7 +3801,7 @@
     }
   },
   {
-    "id": 175,
+    "id": 176,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -3796,30 +3813,6 @@
       "urlFilter": "||mbbank-xacthuc.site^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 176,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||mbbank-xacthuc.site^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -3827,15 +3820,23 @@
     "id": 177,
     "priority": 20,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/warning/warning.html"
-      }
+      "type": "block"
     },
     "condition": {
-      "urlFilter": "||vneid-dinhdanh-gov.top^",
+      "urlFilter": "||mbbank-xacthuc.site^",
       "resourceTypes": [
-        "main_frame"
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
       ]
     }
   },
@@ -3843,6 +3844,22 @@
     "id": 178,
     "priority": 20,
     "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/warning/warning.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||vneid-dinhdanh-gov.top^",
+      "resourceTypes": [
+        "main_frame"
+      ]
+    }
+  },
+  {
+    "id": 179,
+    "priority": 20,
+    "action": {
       "type": "block"
     },
     "condition": {
@@ -3864,7 +3881,7 @@
     }
   },
   {
-    "id": 179,
+    "id": 180,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -3876,30 +3893,6 @@
       "urlFilter": "||vneid-capnhat-dancu.xyz^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 180,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||vneid-capnhat-dancu.xyz^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -3907,15 +3900,23 @@
     "id": 181,
     "priority": 20,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/warning/warning.html"
-      }
+      "type": "block"
     },
     "condition": {
-      "urlFilter": "||facebook-security-checkpoints.com^",
+      "urlFilter": "||vneid-capnhat-dancu.xyz^",
       "resourceTypes": [
-        "main_frame"
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
       ]
     }
   },
@@ -3923,6 +3924,22 @@
     "id": 182,
     "priority": 20,
     "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/warning/warning.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||facebook-security-checkpoints.com^",
+      "resourceTypes": [
+        "main_frame"
+      ]
+    }
+  },
+  {
+    "id": 183,
+    "priority": 20,
+    "action": {
       "type": "block"
     },
     "condition": {
@@ -3944,7 +3961,7 @@
     }
   },
   {
-    "id": 183,
+    "id": 184,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -3956,30 +3973,6 @@
       "urlFilter": "||meta-security-support.xyz^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 184,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||meta-security-support.xyz^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -3987,15 +3980,23 @@
     "id": 185,
     "priority": 20,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/warning/warning.html"
-      }
+      "type": "block"
     },
     "condition": {
-      "urlFilter": "||telegram-airdrop-claim.top^",
+      "urlFilter": "||meta-security-support.xyz^",
       "resourceTypes": [
-        "main_frame"
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
       ]
     }
   },
@@ -4003,6 +4004,22 @@
     "id": 186,
     "priority": 20,
     "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/warning/warning.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||telegram-airdrop-claim.top^",
+      "resourceTypes": [
+        "main_frame"
+      ]
+    }
+  },
+  {
+    "id": 187,
+    "priority": 20,
+    "action": {
       "type": "block"
     },
     "condition": {
@@ -4024,7 +4041,7 @@
     }
   },
   {
-    "id": 187,
+    "id": 188,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -4036,30 +4053,6 @@
       "urlFilter": "||usdt-trc20-claim.vip^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 188,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||usdt-trc20-claim.vip^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -4067,15 +4060,23 @@
     "id": 189,
     "priority": 20,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/warning/warning.html"
-      }
+      "type": "block"
     },
     "condition": {
-      "urlFilter": "||binance-security-verify.top^",
+      "urlFilter": "||usdt-trc20-claim.vip^",
       "resourceTypes": [
-        "main_frame"
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
       ]
     }
   },
@@ -4083,6 +4084,22 @@
     "id": 190,
     "priority": 20,
     "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/warning/warning.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||binance-security-verify.top^",
+      "resourceTypes": [
+        "main_frame"
+      ]
+    }
+  },
+  {
+    "id": 191,
+    "priority": 20,
+    "action": {
       "type": "block"
     },
     "condition": {
@@ -4104,7 +4121,7 @@
     }
   },
   {
-    "id": 191,
+    "id": 192,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -4116,30 +4133,6 @@
       "urlFilter": "||shopee-trungthuong-quatang.xyz^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 192,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||shopee-trungthuong-quatang.xyz^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -4147,15 +4140,23 @@
     "id": 193,
     "priority": 20,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/warning/warning.html"
-      }
+      "type": "block"
     },
     "condition": {
-      "urlFilter": "||tiktok-kiemtien-online.top^",
+      "urlFilter": "||shopee-trungthuong-quatang.xyz^",
       "resourceTypes": [
-        "main_frame"
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
       ]
     }
   },
@@ -4163,6 +4164,22 @@
     "id": 194,
     "priority": 20,
     "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/warning/warning.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||tiktok-kiemtien-online.top^",
+      "resourceTypes": [
+        "main_frame"
+      ]
+    }
+  },
+  {
+    "id": 195,
+    "priority": 20,
+    "action": {
       "type": "block"
     },
     "condition": {
@@ -4184,7 +4201,7 @@
     }
   },
   {
-    "id": 195,
+    "id": 196,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -4196,30 +4213,6 @@
       "urlFilter": "||congan-xuly-phatnguoi.top^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 196,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||congan-xuly-phatnguoi.top^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -4227,15 +4220,23 @@
     "id": 197,
     "priority": 20,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/warning/warning.html"
-      }
+      "type": "block"
     },
     "condition": {
-      "urlFilter": "||toaan-trieutap-online.vip^",
+      "urlFilter": "||congan-xuly-phatnguoi.top^",
       "resourceTypes": [
-        "main_frame"
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
       ]
     }
   },
@@ -4243,6 +4244,22 @@
     "id": 198,
     "priority": 20,
     "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/warning/warning.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||toaan-trieutap-online.vip^",
+      "resourceTypes": [
+        "main_frame"
+      ]
+    }
+  },
+  {
+    "id": 199,
+    "priority": 20,
+    "action": {
       "type": "block"
     },
     "condition": {
@@ -4264,7 +4281,7 @@
     }
   },
   {
-    "id": 199,
+    "id": 200,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -4276,30 +4293,6 @@
       "urlFilter": "||windows-defender-security-alert.xyz^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 200,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||windows-defender-security-alert.xyz^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -4307,15 +4300,23 @@
     "id": 201,
     "priority": 20,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/warning/warning.html"
-      }
+      "type": "block"
     },
     "condition": {
-      "urlFilter": "||apple-security-id-locked.top^",
+      "urlFilter": "||windows-defender-security-alert.xyz^",
       "resourceTypes": [
-        "main_frame"
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
       ]
     }
   },
@@ -4323,6 +4324,22 @@
     "id": 202,
     "priority": 20,
     "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/warning/warning.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||apple-security-id-locked.top^",
+      "resourceTypes": [
+        "main_frame"
+      ]
+    }
+  },
+  {
+    "id": 203,
+    "priority": 20,
+    "action": {
       "type": "block"
     },
     "condition": {
@@ -4344,7 +4361,7 @@
     }
   },
   {
-    "id": 203,
+    "id": 204,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -4356,30 +4373,6 @@
       "urlFilter": "||phishing-test-threat.example^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 204,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||phishing-test-threat.example^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -4387,15 +4380,23 @@
     "id": 205,
     "priority": 20,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/warning/warning.html"
-      }
+      "type": "block"
     },
     "condition": {
-      "urlFilter": "||scam-lottery-winner.online^",
+      "urlFilter": "||phishing-test-threat.example^",
       "resourceTypes": [
-        "main_frame"
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
       ]
     }
   },
@@ -4403,6 +4404,22 @@
     "id": 206,
     "priority": 20,
     "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/warning/warning.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||scam-lottery-winner.online^",
+      "resourceTypes": [
+        "main_frame"
+      ]
+    }
+  },
+  {
+    "id": 207,
+    "priority": 20,
+    "action": {
       "type": "block"
     },
     "condition": {
@@ -4424,7 +4441,7 @@
     }
   },
   {
-    "id": 207,
+    "id": 208,
     "priority": 20,
     "action": {
       "type": "redirect",
@@ -4436,30 +4453,6 @@
       "urlFilter": "||fake-antivirus-scan.top^",
       "resourceTypes": [
         "main_frame"
-      ]
-    }
-  },
-  {
-    "id": 208,
-    "priority": 20,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||fake-antivirus-scan.top^",
-      "resourceTypes": [
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "csp_report",
-        "media",
-        "websocket",
-        "other"
       ]
     }
   },
@@ -4467,6 +4460,30 @@
     "id": 209,
     "priority": 20,
     "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||fake-antivirus-scan.top^",
+      "resourceTypes": [
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "csp_report",
+        "media",
+        "websocket",
+        "other"
+      ]
+    }
+  },
+  {
+    "id": 210,
+    "priority": 20,
+    "action": {
       "type": "redirect",
       "redirect": {
         "extensionPath": "/warning/warning.html"
@@ -4480,7 +4497,7 @@
     }
   },
   {
-    "id": 210,
+    "id": 211,
     "priority": 20,
     "action": {
       "type": "block"
@@ -4504,7 +4521,7 @@
     }
   },
   {
-    "id": 211,
+    "id": 212,
     "priority": 15,
     "action": {
       "type": "redirect",
@@ -4520,7 +4537,7 @@
     }
   },
   {
-    "id": 212,
+    "id": 213,
     "priority": 15,
     "action": {
       "type": "redirect",
@@ -4536,7 +4553,7 @@
     }
   },
   {
-    "id": 213,
+    "id": 214,
     "priority": 15,
     "action": {
       "type": "redirect",
@@ -4552,7 +4569,7 @@
     }
   },
   {
-    "id": 214,
+    "id": 215,
     "priority": 15,
     "action": {
       "type": "redirect",
@@ -4568,7 +4585,7 @@
     }
   },
   {
-    "id": 215,
+    "id": 216,
     "priority": 15,
     "action": {
       "type": "redirect",

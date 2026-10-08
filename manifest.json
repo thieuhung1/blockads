@@ -44,6 +44,12 @@
   },
   "content_scripts": [
     {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content/yt_main_world.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
       "matches": ["<all_urls>"],
       "js": ["content/content.js"],
       "css": ["content/content.css"],
@@ -53,6 +59,7 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "content/yt_main_world.js",
         "warning/warning.html",
         "warning/warning.css",
         "warning/warning.js",

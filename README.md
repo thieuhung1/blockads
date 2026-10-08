@@ -31,12 +31,14 @@ Tính năng này bảo vệ tuyệt đối quyền riêng tư và dữ liệu nh
 
 ---
 
-## 🎬 2. Bộ Tối Ưu Chặn Quảng Cáo YouTube Chuyên Sâu (YouTube Ad Engine)
+## 🎬 2. Bộ Tối Ưu Chặn Quảng Cáo YouTube Chuyên Sâu Cấp Độc Quyền (YouTube Turbo Engine)
 
-YouTube thường xuyên thay đổi cơ chế chống chặn quảng cáo (gây đứng hình video 5-10s hoặc hiện thông báo chặn). NetShield đã được tích hợp bộ engine chuyên sâu:
-- **Tua Nhanh & Tự Động Bỏ Qua Video Ads (16x Fast-Forward & Auto-Skip)**: Khi phát hiện video quảng cáo (kể cả loại không cho bấm bỏ qua), engine tự động tăng tốc độ phát lên **16x** và tua thẳng về cuối trong **0.05 giây**, tắt tiếng tức thì để không gây ồn.
+YouTube liên tục cập nhật công nghệ chống trình chặn quảng cáo (chèn quảng cáo từ máy chủ, quảng cáo Shorts, popup cảnh báo 3 video). NetShield Pro đã được nâng cấp hệ thống chặn 2 tầng cực kỳ mạnh mẽ:
+- **Can Thiệp Tầng Dữ Liệu Gốc Của Trình Phát (MAIN World Player Data Sanitizer)**: Can thiệp trực tiếp vào API `fetch` & `XMLHttpRequest` của YouTube đối với endpoint `/youtubei/v1/player`, bóc tách sạch sẽ toàn bộ các khối dữ liệu `adPlacements`, `playerAds`, `adSlots` trước khi trình phát kịp khởi tạo quảng cáo.
+- **Tua Nhanh & Tự Động Bỏ Qua Video Ads (16x Turbo Fast-Forward & Instant Skip)**: Khi phát hiện video quảng cáo hoặc bumper ads, tự động tăng tốc lên **16x**, tua thẳng về cuối trong **0.01 giây**, tắt tiếng tức thì và mô phỏng chuỗi sự kiện chuột đa tầng bấm bỏ qua.
+- **Tự Động Bỏ Qua Quảng Cáo Trong YouTube Shorts (Auto Shorts Ad Skip)**: Nhận diện các clip ngắn được tài trợ/quảng cáo trong mục Shorts và tự động cuộn lướt qua video tiếp theo.
 - **Tự Động Tắt Popup Cảnh Báo Của YouTube (Anti-Enforcement Dismissal)**: Tự động gỡ bỏ bảng thông báo *"Trình chặn quảng cáo vi phạm Điều khoản dịch vụ của YouTube"*, xóa màn mờ và tự động phát tiếp video liền mạch.
-- **Ẩn Toàn Bộ Banner Ads Trên YouTube**: Loại bỏ sạch sẽ các banner quảng cáo trên trang chủ, trong danh sách gợi ý và khung pop-up nổi trên trình phát video.
+- **Xóa Sạch 100% Banner, Thẻ Gợi Ý Được Tài Trợ & Masthead Ads**: Loại bỏ hoàn toàn các khung quảng cáo trên trang chủ, danh sách video đề xuất và bảng điều khiển cạnh video.
 
 ---
 

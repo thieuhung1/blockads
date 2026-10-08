@@ -216,7 +216,8 @@ const adPatterns = [
   "*://*.youtube.com/pagead/*",
   "*://*.youtube.com/api/stats/ads*",
   "*://*.youtube.com/ptracking*",
-  "*://*.youtube.com/get_midroll_info*"
+  "*://*.youtube.com/get_midroll_info*",
+  "*://*.youtube.com/youtubei/v1/player/ad_break*"
 ];
 
 // Scam / Fake alert URL patterns

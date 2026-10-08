@@ -28,6 +28,7 @@
 
     // 1. YouTube Specialized High-Speed Ad Skipper & Anti-Anti-Adblock Engine
     if (isYouTube) {
+      injectMainWorldScript();
       initYouTubeEngine();
     }
 
@@ -64,19 +65,30 @@
     // Ignore context errors
   }
 
+  function injectMainWorldScript() {
+    try {
+      const script = document.createElement('script');
+      script.src = chrome.runtime.getURL('content/yt_main_world.js');
+      script.onload = () => script.remove();
+      (document.head || document.documentElement).appendChild(script);
+    } catch (e) {}
+  }
+
   // =========================================================================
-  // 🌟 YOUTUBE SPECIALIZED ENGINE (Instant Skip, Speed-Up & Modal Dismissal)
+  // 🌟 YOUTUBE SPECIALIZED ENGINE (Instant Skip, Speed-Up, Shorts & DOM Purge)
   // =========================================================================
   function initYouTubeEngine() {
     let adFastForwardActive = false;
     let userMutedState = false;
 
-    // A. Polling loop optimized for YouTube video states
+    // Fast polling loop for YouTube video & UI states
     setInterval(() => {
       handleYouTubeVideoAds();
+      handleYouTubeShortsAds();
       handleYouTubeAntiAdblockPopup();
       dismissYouTubeBannerAds();
-    }, 150);
+      cleanYouTubeFeedAds();
+    }, 80);
 
     // B. Fast forward & skip video ads instantly
     function handleYouTubeVideoAds() {
@@ -88,13 +100,16 @@
       const isAdShowing = player.classList.contains('ad-showing') ||
                           player.classList.contains('ad-interrupting') ||
                           !!document.querySelector('.ytp-ad-player-overlay') ||
-                          !!document.querySelector('.ytp-ad-text');
+                          !!document.querySelector('.ytp-ad-player-overlay-layout') ||
+                          !!document.querySelector('.ytp-ad-module > *') ||
+                          !!document.querySelector('.ytp-ad-text') ||
+                          !!document.querySelector('.ytp-ad-preview-text');
 
       if (isAdShowing) {
         if (!adFastForwardActive) {
           adFastForwardActive = true;
           userMutedState = video.muted;
-          video.muted = true; // Tắt tiếng trong khoảnh khắc quảng cáo chạy
+          video.muted = true; // Tắt tiếng ngay lập tức
         }
 
         // Tăng tốc độ phát quảng cáo lên 16x
@@ -102,24 +117,35 @@
           video.playbackRate = 16.0;
         } catch {}
 
-        // Nhảy thời gian tua thẳng về cuối quảng cáo
+        // Tua thẳng về cuối quảng cáo
         if (Number.isFinite(video.duration) && video.duration > 0) {
-          video.currentTime = video.duration - 0.1;
+          video.currentTime = video.duration || 999999;
         }
 
-        // Bấm nút bỏ qua (Skip button) ngay khi nút xuất hiện
+        // Đảm bảo video không bị YouTube dừng hình (unpause)
+        if (video.paused) {
+          video.play().catch(() => {});
+        }
+
+        // Bấm nút bỏ qua (Skip button) với đầy đủ chuỗi sự kiện chuột
         const skipButtons = [
           '.ytp-ad-skip-button',
           '.ytp-ad-skip-button-modern',
           '.ytp-skip-ad-button',
           '.ytp-ad-skip-button-slot button',
-          '.ytp-ad-preview-container button'
+          '.ytp-ad-preview-container button',
+          '.ytp-ad-skip-button-container button',
+          'button.ytp-ad-skip-button-modern',
+          '.ytp-ad-skip-button-text',
+          '.ytp-ad-survey-answer-button'
         ];
 
         for (const selector of skipButtons) {
           const btn = document.querySelector(selector);
           if (btn) {
-            btn.click();
+            ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach(evt => {
+              btn.dispatchEvent(new MouseEvent(evt, { bubbles: true, cancelable: true, view: window }));
+            });
             break;
           }
         }
@@ -133,7 +159,49 @@
       }
     }
 
-    // C. Tự động gỡ bỏ Popup cảnh báo chặn quảng cáo của YouTube
+    // C. Tự động bỏ qua quảng cáo trong YouTube Shorts
+    function handleYouTubeShortsAds() {
+      if (!window.location.pathname.startsWith('/shorts')) return;
+      const activeReel = document.querySelector('ytd-reel-video-renderer[is-active]') ||
+                         document.querySelector('ytd-reel-video-renderer[is-active=""]');
+      if (activeReel) {
+        const isShortAd = !!activeReel.querySelector(
+          'ytd-ad-slot-renderer, .ytd-in-feed-ad-layout-renderer, [aria-label*="Sponsored"], [aria-label*="Được tài trợ"]'
+        );
+        if (isShortAd) {
+          const nextBtn = document.querySelector('#navigation-button-down button') ||
+                          document.querySelector('.navigation-button-down button');
+          if (nextBtn) {
+            nextBtn.click();
+          } else {
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', keyCode: 40, bubbles: true }));
+          }
+        }
+      }
+    }
+
+    // D. Xóa sạch các thẻ quảng cáo in-feed trên trang chủ và thanh gợi ý
+    function cleanYouTubeFeedAds() {
+      const feedAdSelectors = [
+        'ytd-ad-slot-renderer',
+        'ytd-in-feed-ad-layout-renderer',
+        'ytd-banner-promo-renderer',
+        'ytd-statement-banner-renderer',
+        'ytd-rich-item-renderer:has(ytd-ad-slot-renderer)',
+        'ytd-rich-section-renderer:has(ytd-ad-slot-renderer)',
+        '#masthead-ad',
+        '#player-ads',
+        'ytd-promoted-sparkles-web-renderer',
+        'ytd-compact-promoted-video-renderer',
+        'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]'
+      ];
+
+      for (const sel of feedAdSelectors) {
+        document.querySelectorAll(sel).forEach(el => el.remove());
+      }
+    }
+
+    // E. Tự động gỡ bỏ Popup cảnh báo chặn quảng cáo của YouTube
     function handleYouTubeAntiAdblockPopup() {
       const modalSelectors = [
         'ytd-enforcement-message-view-model',
@@ -159,16 +227,25 @@
       }
     }
 
-    // D. Đóng các banner quảng cáo nổi trên video
+    // F. Đóng các banner quảng cáo nổi trên video
     function dismissYouTubeBannerAds() {
-      const closeButtons = document.querySelectorAll('.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container button');
+      const closeButtons = document.querySelectorAll(
+        '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container button, button.ytp-ad-overlay-close-button'
+      );
       closeButtons.forEach(btn => btn.click());
     }
 
-    // E. Lắng nghe sự kiện chuyển video trong SPA của YouTube
+    // G. Lắng nghe sự kiện chuyển video trong SPA của YouTube
     document.addEventListener('yt-navigate-finish', () => {
       handleYouTubeVideoAds();
       handleYouTubeAntiAdblockPopup();
+      dismissYouTubeBannerAds();
+      cleanYouTubeFeedAds();
+    });
+
+    document.addEventListener('yt-page-data-updated', () => {
+      handleYouTubeVideoAds();
+      cleanYouTubeFeedAds();
     });
   }
 
