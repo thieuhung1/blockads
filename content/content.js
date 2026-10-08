@@ -1,7 +1,8 @@
-// NetShield Content Script: Cosmetic Filtering, Anti-Scam & Anti-Tracking Shield
+// NetShield Content Script: Cosmetic Filtering, Anti-Scam, Anti-Tracking & YouTube Ad Engine
 
 (async function () {
   const currentHostname = window.location.hostname.toLowerCase();
+  const isYouTube = currentHostname.includes('youtube.com');
 
   try {
     const {
@@ -25,23 +26,28 @@
       return;
     }
 
-    // 1. Anti-Tracking & Data Harvesting Protection (Cấm thu thập thông tin trái phép)
+    // 1. YouTube Specialized High-Speed Ad Skipper & Anti-Anti-Adblock Engine
+    if (isYouTube) {
+      initYouTubeEngine();
+    }
+
+    // 2. Anti-Tracking & Data Harvesting Protection
     if (antiTrackingEnabled !== false) {
       initAntiTrackingShield();
     }
 
-    // 2. Anti-Scam Protection
-    if (antiScamEnabled !== false) {
+    // 3. Anti-Scam Protection
+    if (antiScamEnabled !== false && !isYouTube) {
       initAntiScamShield();
     }
 
-    // 3. Cosmetic Filter
+    // 4. Cosmetic Filter
     if (cosmeticFiltering !== false) {
       runCosmeticCleanup();
 
       const observer = new MutationObserver(() => {
         runCosmeticCleanup();
-        if (antiScamEnabled !== false) {
+        if (antiScamEnabled !== false && !isYouTube) {
           neutralizeClickJackingOverlays();
         }
       });
@@ -58,25 +64,129 @@
     // Ignore context errors
   }
 
-  // --- 1. Anti-Tracking & Anti-Harvesting Core ---
+  // =========================================================================
+  // 🌟 YOUTUBE SPECIALIZED ENGINE (Instant Skip, Speed-Up & Modal Dismissal)
+  // =========================================================================
+  function initYouTubeEngine() {
+    let adFastForwardActive = false;
+    let userMutedState = false;
+
+    // A. Polling loop optimized for YouTube video states
+    setInterval(() => {
+      handleYouTubeVideoAds();
+      handleYouTubeAntiAdblockPopup();
+      dismissYouTubeBannerAds();
+    }, 150);
+
+    // B. Fast forward & skip video ads instantly
+    function handleYouTubeVideoAds() {
+      const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+      const video = document.querySelector('video.html5-main-video') || document.querySelector('video');
+
+      if (!player || !video) return;
+
+      const isAdShowing = player.classList.contains('ad-showing') ||
+                          player.classList.contains('ad-interrupting') ||
+                          !!document.querySelector('.ytp-ad-player-overlay') ||
+                          !!document.querySelector('.ytp-ad-text');
+
+      if (isAdShowing) {
+        if (!adFastForwardActive) {
+          adFastForwardActive = true;
+          userMutedState = video.muted;
+          video.muted = true; // Tắt tiếng trong khoảnh khắc quảng cáo chạy
+        }
+
+        // Tăng tốc độ phát quảng cáo lên 16x
+        try {
+          video.playbackRate = 16.0;
+        } catch {}
+
+        // Nhảy thời gian tua thẳng về cuối quảng cáo
+        if (Number.isFinite(video.duration) && video.duration > 0) {
+          video.currentTime = video.duration - 0.1;
+        }
+
+        // Bấm nút bỏ qua (Skip button) ngay khi nút xuất hiện
+        const skipButtons = [
+          '.ytp-ad-skip-button',
+          '.ytp-ad-skip-button-modern',
+          '.ytp-skip-ad-button',
+          '.ytp-ad-skip-button-slot button',
+          '.ytp-ad-preview-container button'
+        ];
+
+        for (const selector of skipButtons) {
+          const btn = document.querySelector(selector);
+          if (btn) {
+            btn.click();
+            break;
+          }
+        }
+      } else {
+        // Quảng cáo đã kết thúc -> Khôi phục trạng thái chuẩn
+        if (adFastForwardActive) {
+          adFastForwardActive = false;
+          video.playbackRate = 1.0;
+          video.muted = userMutedState;
+        }
+      }
+    }
+
+    // C. Tự động gỡ bỏ Popup cảnh báo chặn quảng cáo của YouTube
+    function handleYouTubeAntiAdblockPopup() {
+      const modalSelectors = [
+        'ytd-enforcement-message-view-model',
+        'tp-yt-paper-dialog:has(ytd-enforcement-message-view-model)',
+        '#feedback.ytd-enforcement-message-view-model'
+      ];
+
+      for (const selector of modalSelectors) {
+        const modal = document.querySelector(selector);
+        if (modal) {
+          const parentDialog = modal.closest('tp-yt-paper-dialog') || modal;
+          parentDialog.remove();
+
+          // Xóa lớp phủ đen mờ nền
+          document.querySelectorAll('tp-yt-iron-overlay-backdrop').forEach(el => el.remove());
+
+          // Cho video phát lại tự nhiên
+          const video = document.querySelector('video.html5-main-video') || document.querySelector('video');
+          if (video && video.paused) {
+            video.play().catch(() => {});
+          }
+        }
+      }
+    }
+
+    // D. Đóng các banner quảng cáo nổi trên video
+    function dismissYouTubeBannerAds() {
+      const closeButtons = document.querySelectorAll('.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container button');
+      closeButtons.forEach(btn => btn.click());
+    }
+
+    // E. Lắng nghe sự kiện chuyển video trong SPA của YouTube
+    document.addEventListener('yt-navigate-finish', () => {
+      handleYouTubeVideoAds();
+      handleYouTubeAntiAdblockPopup();
+    });
+  }
+
+  // --- 2. Anti-Tracking & Anti-Harvesting Core ---
   function initAntiTrackingShield() {
-    // A. Bật tín hiệu Do Not Track & Global Privacy Control
     try {
       Object.defineProperty(navigator, 'doNotTrack', { get: () => '1', configurable: true });
       Object.defineProperty(navigator, 'globalPrivacyControl', { get: () => true, configurable: true });
     } catch {}
 
-    // B. Chống đọc trộm bộ nhớ tạm (Anti-Clipboard Sniffing)
     if (navigator.clipboard && navigator.clipboard.readText) {
       const originalReadText = navigator.clipboard.readText.bind(navigator.clipboard);
       let userGestureTimestamp = 0;
 
-      // Ghi nhận tương tác chuột hoặc phím gần nhất của người dùng
       window.addEventListener('keydown', () => { userGestureTimestamp = Date.now(); }, true);
       window.addEventListener('mousedown', () => { userGestureTimestamp = Date.now(); }, true);
 
       navigator.clipboard.readText = function () {
-        // Chỉ cho phép đọc nếu vừa có thao tác từ người dùng trong vòng 1 giây
         if (Date.now() - userGestureTimestamp < 1000) {
           return originalReadText();
         }
@@ -85,16 +195,13 @@
       };
     }
 
-    // C. Chống lấy dấu vân tay trình duyệt (Anti-Canvas Fingerprinting)
     try {
       const origToDataURL = HTMLCanvasElement.prototype.toDataURL;
       HTMLCanvasElement.prototype.toDataURL = function (type, ...args) {
-        // Nếu canvas có kích thước nhỏ thường dùng để lấy hash vân tay (vd: 16x16, 200x50)
         if (this.width > 0 && this.height > 0 && this.width < 350 && this.height < 150) {
           const ctx = this.getContext('2d');
           if (ctx) {
             try {
-              // Thêm 1 lượng nhiễu siêu nhỏ vi lượng ở pixel góc để bẻ gãy mã hash định danh
               const imgData = ctx.getImageData(0, 0, 1, 1);
               imgData.data[0] = (imgData.data[0] + 1) % 256;
               ctx.putImageData(imgData, 0, 0);
@@ -105,7 +212,6 @@
       };
     } catch {}
 
-    // D. Giấu thông tin pin và phần cứng (Tránh fingerprinting qua API pin)
     if ('getBattery' in navigator) {
       try {
         delete navigator.getBattery;
@@ -113,7 +219,7 @@
     }
   }
 
-  // --- 2. Anti-Scam Shield Functions ---
+  // --- 3. Anti-Scam Shield Functions ---
   function initAntiScamShield() {
     neutralizeClickJackingOverlays();
 
@@ -169,7 +275,7 @@
     }
   }
 
-  // --- 3. Cosmetic Cleanup ---
+  // --- 4. Cosmetic Ad Cleanup ---
   function runCosmeticCleanup() {
     const adSelectors = [
       'ins.adsbygoogle',
@@ -179,7 +285,9 @@
       '.outbrain-container',
       'div[class*="banner-ads"]',
       'div[class*="ad-placement"]',
-      'div[class*="fake-alert"]'
+      'div[class*="fake-alert"]',
+      '#masthead-ad',
+      'ytd-ad-slot-renderer'
     ];
 
     for (const selector of adSelectors) {

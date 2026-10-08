@@ -211,7 +211,12 @@ const adPatterns = [
   "*://*/*banner-ads*",
   "*://*/*track.gif*",
   "*://*/*tracking-pixel*",
-  "*://*/*sponsor_banner*"
+  "*://*/*sponsor_banner*",
+  // YouTube Ad endpoints
+  "*://*.youtube.com/pagead/*",
+  "*://*.youtube.com/api/stats/ads*",
+  "*://*.youtube.com/ptracking*",
+  "*://*.youtube.com/get_midroll_info*"
 ];
 
 // Scam / Fake alert URL patterns

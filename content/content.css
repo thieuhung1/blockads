@@ -63,6 +63,30 @@ div[id*="admicro_"] {
   height: 0 !important;
 }
 
+/* YouTube Specific Ad Elements & Anti-Adblock Dialogs */
+ytd-ad-slot-renderer,
+ytd-in-feed-ad-layout-renderer,
+ytd-banner-promo-renderer,
+ytd-statement-banner-renderer,
+ytd-rich-item-renderer:has(ytd-ad-slot-renderer),
+#masthead-ad,
+#player-ads,
+.ytp-ad-overlay-container,
+.ytp-ad-message-container,
+.ytp-ad-text-overlay,
+.ytp-ad-image-overlay,
+ytd-action-companion-ad-renderer,
+ytd-promoted-sparkles-web-renderer,
+ytd-search-pyv-renderer,
+tp-yt-paper-dialog:has(ytd-enforcement-message-view-model),
+ytd-enforcement-message-view-model {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Video Pre-roll / Floating Ad Overlay Containers */
 div.floating-ad-container,
 div.sticky-ad-bar,
