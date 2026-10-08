@@ -1,10 +1,11 @@
-// NetShield Popup Controller with Anti-Scam Shield
+// NetShield Popup Controller with Anti-Scam & Anti-Tracking Shield
 
 document.addEventListener('DOMContentLoaded', async () => {
   let currentTab = null;
   let currentHostname = '';
   let isMasterEnabled = true;
   let isAntiScamEnabled = true;
+  let isAntiTrackingEnabled = true;
 
   // DOM Elements
   const masterToggleBtn = document.getElementById('masterToggleBtn');
@@ -13,6 +14,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const statusText = document.getElementById('statusText');
   const antiScamToggleCheckbox = document.getElementById('antiScamToggleCheckbox');
   const antiScamStatusText = document.getElementById('antiScamStatusText');
+  const antiTrackingToggleCheckbox = document.getElementById('antiTrackingToggleCheckbox');
+  const antiTrackingStatusText = document.getElementById('antiTrackingStatusText');
   const siteHostnameEl = document.getElementById('siteHostname');
   const siteFaviconEl = document.getElementById('siteFavicon');
   const siteProtectionLabel = document.getElementById('siteProtectionLabel');
@@ -20,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tabBlockedCountEl = document.getElementById('tabBlockedCount');
   const totalBlockedCountEl = document.getElementById('totalBlockedCount');
   const totalScamCountEl = document.getElementById('totalScamCount');
+  const totalTrackingCountEl = document.getElementById('totalTrackingCount');
   const quickAddForm = document.getElementById('quickAddForm');
   const quickAddInput = document.getElementById('quickAddInput');
   const quickAddFeedback = document.getElementById('quickAddFeedback');
@@ -69,10 +73,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       isMasterEnabled = response.enabled;
       isAntiScamEnabled = response.antiScamEnabled;
+      isAntiTrackingEnabled = response.antiTrackingEnabled;
       updateMasterUI(isMasterEnabled);
 
       antiScamToggleCheckbox.checked = isAntiScamEnabled;
       updateAntiScamUI(isAntiScamEnabled);
+
+      antiTrackingToggleCheckbox.checked = isAntiTrackingEnabled;
+      updateAntiTrackingUI(isAntiTrackingEnabled);
 
       // Whitelist check
       const isWhitelisted = response.whitelist.some(w =>
@@ -86,6 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       tabBlockedCountEl.textContent = response.tabBlocked || 0;
       totalBlockedCountEl.textContent = (response.totalBlocked || 0).toLocaleString();
       totalScamCountEl.textContent = (response.totalScamBlocked || 0).toLocaleString();
+      totalTrackingCountEl.textContent = (response.totalTrackingBlocked || 0).toLocaleString();
 
       // Recent blocked list
       renderRecentBlocked(response.recentBlocked || []);
@@ -108,11 +117,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function updateAntiScamUI(enabled) {
     if (enabled) {
-      antiScamStatusText.textContent = 'Đang bảo vệ chống lừa đảo';
+      antiScamStatusText.textContent = 'Đang bật bảo vệ';
       antiScamStatusText.style.color = '#fda4af';
     } else {
-      antiScamStatusText.textContent = 'Đã tắt khiên lừa đảo';
+      antiScamStatusText.textContent = 'Đã tắt khiên';
       antiScamStatusText.style.color = '#94a3b8';
+    }
+  }
+
+  function updateAntiTrackingUI(enabled) {
+    if (enabled) {
+      antiTrackingStatusText.textContent = 'Đang cấm theo dõi';
+      antiTrackingStatusText.style.color = '#6ee7b7';
+    } else {
+      antiTrackingStatusText.textContent = 'Đã tắt khiên';
+      antiTrackingStatusText.style.color = '#94a3b8';
     }
   }
 
@@ -143,6 +162,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (item.isScam) {
         tagClass = 'scam';
         tagText = 'LỪA ĐẢO';
+      } else if (item.isTracker) {
+        tagClass = 'tracker';
+        tagText = 'THEO DÕI';
       }
 
       row.innerHTML = `
@@ -224,6 +246,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshState();
   });
 
+  antiTrackingToggleCheckbox.addEventListener('change', async () => {
+    isAntiTrackingEnabled = antiTrackingToggleCheckbox.checked;
+    updateAntiTrackingUI(isAntiTrackingEnabled);
+    await chrome.runtime.sendMessage({
+      type: 'TOGGLE_ANTI_TRACKING',
+      enabled: isAntiTrackingEnabled
+    });
+    await refreshState();
+  });
+
   siteToggleCheckbox.addEventListener('change', async () => {
     if (!currentHostname) return;
     const res = await chrome.runtime.sendMessage({
@@ -242,7 +274,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(val) || val.includes(':');
     const isScam = val.includes('phish') || val.includes('scam') || val.includes('lua-dao') || val.includes('trungthuong');
-    const ruleType = isScam ? 'scam' : (isIp ? 'ip' : 'domain');
+    const isTracker = val.includes('track') || val.includes('analytics') || val.includes('telemetry') || val.includes('pixel') || val.includes('hotjar');
+    
+    let ruleType = 'domain';
+    if (isScam) ruleType = 'scam';
+    else if (isTracker) ruleType = 'tracker';
+    else if (isIp) ruleType = 'ip';
 
     const success = await addCustomRule(val, ruleType, 'Thêm nhanh từ Popup');
 

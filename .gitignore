@@ -1,0 +1,8 @@
+# Browser extension build & runtime cache
+_metadata/
+*.crx
+*.pem
+
+# System files
+.DS_Store
+Thumbs.db

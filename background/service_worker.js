@@ -1,4 +1,4 @@
-// NetShield Background Service Worker (Manifest V3) - Ad & Anti-Scam Shield
+// NetShield Background Service Worker (Manifest V3) - Ad, Anti-Scam & Anti-Tracking Shield
 
 const DYNAMIC_RULE_START_ID = 10000;
 const WHITELIST_RULE_START_ID = 50000;
@@ -7,6 +7,7 @@ const BYPASS_SCAM_START_ID = 80000;
 // In-memory runtime state
 let isEnabled = true;
 let isAntiScamEnabled = true;
+let isAntiTrackingEnabled = true;
 let tabBlockStats = {}; // { tabId: count }
 let liveNetworkRequests = []; // Circular buffer of recent requests
 const MAX_LIVE_REQUESTS = 150;
@@ -31,9 +32,11 @@ async function initializeStorage() {
   const data = await chrome.storage.local.get([
     'enabled',
     'antiScamEnabled',
+    'antiTrackingEnabled',
     'cosmeticFiltering',
     'totalBlocked',
     'totalScamBlocked',
+    'totalTrackingBlocked',
     'lastBlockedScamUrl',
     'customRules',
     'whitelist',
@@ -45,9 +48,11 @@ async function initializeStorage() {
   const defaults = {
     enabled: data.enabled !== undefined ? data.enabled : true,
     antiScamEnabled: data.antiScamEnabled !== undefined ? data.antiScamEnabled : true,
+    antiTrackingEnabled: data.antiTrackingEnabled !== undefined ? data.antiTrackingEnabled : true,
     cosmeticFiltering: data.cosmeticFiltering !== undefined ? data.cosmeticFiltering : true,
     totalBlocked: data.totalBlocked || 0,
     totalScamBlocked: data.totalScamBlocked || 0,
+    totalTrackingBlocked: data.totalTrackingBlocked || 0,
     lastBlockedScamUrl: data.lastBlockedScamUrl || '',
     customRules: data.customRules || [
       {
@@ -68,9 +73,9 @@ async function initializeStorage() {
       },
       {
         id: 10003,
-        type: 'domain',
-        target: 'popads.net',
-        note: 'Mạng quảng cáo popunder phiền toái',
+        type: 'tracker',
+        target: 'hotjar.com',
+        note: 'Session Replay ghi lén thao tác màn hình',
         enabled: true,
         createdAt: new Date().toISOString()
       },
@@ -100,6 +105,7 @@ async function initializeStorage() {
   await chrome.storage.local.set(defaults);
   isEnabled = defaults.enabled;
   isAntiScamEnabled = defaults.antiScamEnabled;
+  isAntiTrackingEnabled = defaults.antiTrackingEnabled;
 }
 
 // Synchronize storage configuration with DeclarativeNetRequest dynamic rules
@@ -107,12 +113,14 @@ async function syncRulesWithStorage() {
   const {
     enabled,
     antiScamEnabled,
+    antiTrackingEnabled,
     customRules,
     whitelist,
     temporaryBypassDomains
   } = await chrome.storage.local.get([
     'enabled',
     'antiScamEnabled',
+    'antiTrackingEnabled',
     'customRules',
     'whitelist',
     'temporaryBypassDomains'
@@ -120,6 +128,7 @@ async function syncRulesWithStorage() {
 
   isEnabled = enabled !== false;
   isAntiScamEnabled = antiScamEnabled !== false;
+  isAntiTrackingEnabled = antiTrackingEnabled !== false;
 
   // 1. Enable/Disable static ruleset
   try {
@@ -136,7 +145,6 @@ async function syncRulesWithStorage() {
   const removeRuleIds = existingRules.map(r => r.id);
 
   if (!isEnabled) {
-    // If disabled globally, override all
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: removeRuleIds,
       addRules: [
@@ -160,7 +168,7 @@ async function syncRulesWithStorage() {
   // 3. Build dynamic rules
   const addRules = [];
 
-  // Add custom block/scam rules
+  // Add custom block/scam/tracker rules
   if (Array.isArray(customRules)) {
     for (const rule of customRules) {
       if (!rule.enabled) continue;
@@ -171,7 +179,6 @@ async function syncRulesWithStorage() {
       }
 
       if (rule.type === 'scam' && isAntiScamEnabled) {
-        // Scam rule: Redirect main_frame to warning page, block subresources
         addRules.push({
           id: rule.id,
           priority: 40,
@@ -195,6 +202,17 @@ async function syncRulesWithStorage() {
               'sub_frame', 'stylesheet', 'script', 'image', 'font',
               'object', 'xmlhttprequest', 'ping', 'media', 'websocket', 'other'
             ]
+          }
+        });
+      } else if (rule.type === 'tracker') {
+        if (!isAntiTrackingEnabled) continue;
+        addRules.push({
+          id: rule.id,
+          priority: 15,
+          action: { type: 'block' },
+          condition: {
+            urlFilter: filter,
+            resourceTypes: ['script', 'xmlhttprequest', 'ping', 'sub_frame', 'image', 'other']
           }
         });
       } else {
@@ -244,7 +262,7 @@ async function syncRulesWithStorage() {
       if (!clean) continue;
       addRules.push({
         id: bId++,
-        priority: 500, // Highest priority overrides scam warning redirect
+        priority: 500,
         action: { type: 'allow' },
         condition: {
           urlFilter: `||${clean}^`
@@ -274,7 +292,7 @@ if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
   });
 }
 
-// Network Request Inspector & Scam URL Tracker
+// Network Request Inspector
 chrome.webRequest.onBeforeRequest.addListener(
   async (details) => {
     const { url, tabId, type, timeStamp } = details;
@@ -290,7 +308,6 @@ chrome.webRequest.onBeforeRequest.addListener(
       hostname = url;
     }
 
-    // Check if this looks like a scam destination on main frame
     if (type === 'main_frame' && isAntiScamEnabled) {
       const isKnownScam = isScamThreat(url, hostname);
       if (isKnownScam) {
@@ -322,6 +339,11 @@ function isScamThreat(url, hostname) {
   return scamKeywords.some(k => hostname.includes(k) || url.includes(k));
 }
 
+function isTrackerThreat(url, hostname) {
+  const trackerKeywords = ['analytics', 'hotjar', 'clarity', 'fullstory', 'fingerprint', 'telemetry', 'track', 'pixel', 'mouseflow', 'smartlook'];
+  return trackerKeywords.some(k => hostname.includes(k) || url.includes(k));
+}
+
 // Record blocked or redirected requests
 async function recordBlockedRequest(url, type, tabId, ruleId, isScam) {
   if (tabId && tabId > 0) {
@@ -329,14 +351,17 @@ async function recordBlockedRequest(url, type, tabId, ruleId, isScam) {
     updateBadge(tabId, tabBlockStats[tabId]);
   }
 
-  const { totalBlocked, totalScamBlocked, recentBlocked } = await chrome.storage.local.get([
+  const {
+    totalBlocked,
+    totalScamBlocked,
+    totalTrackingBlocked,
+    recentBlocked
+  } = await chrome.storage.local.get([
     'totalBlocked',
     'totalScamBlocked',
+    'totalTrackingBlocked',
     'recentBlocked'
   ]);
-
-  const newTotal = (totalBlocked || 0) + 1;
-  const newScamTotal = isScam ? (totalScamBlocked || 0) + 1 : (totalScamBlocked || 0);
 
   let hostname = '';
   let isIp = false;
@@ -348,12 +373,19 @@ async function recordBlockedRequest(url, type, tabId, ruleId, isScam) {
     hostname = url.substring(0, 40);
   }
 
+  const isTracker = isTrackerThreat(url, hostname);
+
+  const newTotal = (totalBlocked || 0) + 1;
+  const newScamTotal = isScam ? (totalScamBlocked || 0) + 1 : (totalScamBlocked || 0);
+  const newTrackingTotal = isTracker ? (totalTrackingBlocked || 0) + 1 : (totalTrackingBlocked || 0);
+
   const blockRecord = {
     id: Date.now() + Math.random().toString(36).substr(2, 4),
     url: url,
     hostname: hostname,
     isIp: isIp,
     isScam: isScam || false,
+    isTracker: isTracker,
     type: type || 'other',
     ruleId: ruleId || null,
     timestamp: Date.now()
@@ -368,6 +400,7 @@ async function recordBlockedRequest(url, type, tabId, ruleId, isScam) {
   const toUpdate = {
     totalBlocked: newTotal,
     totalScamBlocked: newScamTotal,
+    totalTrackingBlocked: newTrackingTotal,
     recentBlocked: list
   };
 
@@ -379,7 +412,7 @@ async function recordBlockedRequest(url, type, tabId, ruleId, isScam) {
 
   const liveMatch = liveNetworkRequests.find(r => r.url === url);
   if (liveMatch) {
-    liveMatch.status = isScam ? 'scam_blocked' : 'blocked';
+    liveMatch.status = isScam ? 'scam_blocked' : (isTracker ? 'tracker_blocked' : 'blocked');
   }
 }
 
@@ -431,9 +464,11 @@ async function handleMessage(message, sender) {
       const data = await chrome.storage.local.get([
         'enabled',
         'antiScamEnabled',
+        'antiTrackingEnabled',
         'cosmeticFiltering',
         'totalBlocked',
         'totalScamBlocked',
+        'totalTrackingBlocked',
         'customRules',
         'whitelist',
         'recentBlocked'
@@ -446,9 +481,11 @@ async function handleMessage(message, sender) {
         success: true,
         enabled: data.enabled !== false,
         antiScamEnabled: data.antiScamEnabled !== false,
+        antiTrackingEnabled: data.antiTrackingEnabled !== false,
         cosmeticFiltering: data.cosmeticFiltering !== false,
         totalBlocked: data.totalBlocked || 0,
         totalScamBlocked: data.totalScamBlocked || 0,
+        totalTrackingBlocked: data.totalTrackingBlocked || 0,
         tabBlocked: tabBlocked,
         customRules: data.customRules || [],
         whitelist: data.whitelist || [],
@@ -470,6 +507,13 @@ async function handleMessage(message, sender) {
       await chrome.storage.local.set({ antiScamEnabled: isAntiScamEnabled });
       await syncRulesWithStorage();
       return { success: true, antiScamEnabled: isAntiScamEnabled };
+    }
+
+    case 'TOGGLE_ANTI_TRACKING': {
+      isAntiTrackingEnabled = message.enabled;
+      await chrome.storage.local.set({ antiTrackingEnabled: isAntiTrackingEnabled });
+      await syncRulesWithStorage();
+      return { success: true, antiTrackingEnabled: isAntiTrackingEnabled };
     }
 
     case 'TOGGLE_COSMETIC': {
@@ -567,7 +611,12 @@ async function handleMessage(message, sender) {
     }
 
     case 'RESET_STATS': {
-      await chrome.storage.local.set({ totalBlocked: 0, totalScamBlocked: 0, recentBlocked: [] });
+      await chrome.storage.local.set({
+        totalBlocked: 0,
+        totalScamBlocked: 0,
+        totalTrackingBlocked: 0,
+        recentBlocked: []
+      });
       tabBlockStats = {};
       await updateBadgeForAllTabs();
       return { success: true };
@@ -578,6 +627,7 @@ async function handleMessage(message, sender) {
         'customRules',
         'whitelist',
         'antiScamEnabled',
+        'antiTrackingEnabled',
         'cosmeticFiltering'
       ]);
       return { success: true, config: data };
@@ -591,6 +641,7 @@ async function handleMessage(message, sender) {
       if (Array.isArray(config.customRules)) toSet.customRules = config.customRules;
       if (Array.isArray(config.whitelist)) toSet.whitelist = config.whitelist;
       if (typeof config.antiScamEnabled === 'boolean') toSet.antiScamEnabled = config.antiScamEnabled;
+      if (typeof config.antiTrackingEnabled === 'boolean') toSet.antiTrackingEnabled = config.antiTrackingEnabled;
       if (typeof config.cosmeticFiltering === 'boolean') toSet.cosmeticFiltering = config.cosmeticFiltering;
 
       await chrome.storage.local.set(toSet);

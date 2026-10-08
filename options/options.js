@@ -1,12 +1,14 @@
-// NetShield Options & Dashboard Controller with Anti-Scam Shield
+// NetShield Options & Dashboard Controller with Anti-Scam & Anti-Tracking Shield
 
 document.addEventListener('DOMContentLoaded', async () => {
   let appState = {
     enabled: true,
     antiScamEnabled: true,
+    antiTrackingEnabled: true,
     cosmeticFiltering: true,
     totalBlocked: 0,
     totalScamBlocked: 0,
+    totalTrackingBlocked: 0,
     customRules: [],
     whitelist: [],
     recentBlocked: []
@@ -22,10 +24,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Overview Elements
   const dashTotalBlocked = document.getElementById('dashTotalBlocked');
   const dashScamCount = document.getElementById('dashScamCount');
+  const dashTrackingCount = document.getElementById('dashTrackingCount');
   const dashIpRulesCount = document.getElementById('dashIpRulesCount');
   const dashWhitelistCount = document.getElementById('dashWhitelistCount');
   const dashMasterToggle = document.getElementById('dashMasterToggle');
   const dashAntiScamToggle = document.getElementById('dashAntiScamToggle');
+  const dashAntiTrackingToggle = document.getElementById('dashAntiTrackingToggle');
   const dashCosmeticToggle = document.getElementById('dashCosmeticToggle');
   const btnResetStats = document.getElementById('btnResetStats');
 
@@ -96,6 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderOverview() {
     dashTotalBlocked.textContent = (appState.totalBlocked || 0).toLocaleString();
     dashScamCount.textContent = (appState.totalScamBlocked || 0).toLocaleString();
+    dashTrackingCount.textContent = (appState.totalTrackingBlocked || 0).toLocaleString();
 
     const rules = appState.customRules || [];
     const ipCount = rules.filter(r => r.type === 'ip').length;
@@ -105,6 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     dashMasterToggle.checked = appState.enabled;
     dashAntiScamToggle.checked = appState.antiScamEnabled !== false;
+    dashAntiTrackingToggle.checked = appState.antiTrackingEnabled !== false;
     dashCosmeticToggle.checked = appState.cosmeticFiltering;
   }
 
@@ -123,6 +129,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderOverview();
   });
 
+  dashAntiTrackingToggle.addEventListener('change', async () => {
+    const val = dashAntiTrackingToggle.checked;
+    await chrome.runtime.sendMessage({ type: 'TOGGLE_ANTI_TRACKING', enabled: val });
+    appState.antiTrackingEnabled = val;
+    renderOverview();
+  });
+
   dashCosmeticToggle.addEventListener('change', async () => {
     const val = dashCosmeticToggle.checked;
     await chrome.runtime.sendMessage({ type: 'TOGGLE_COSMETIC', enabled: val });
@@ -134,6 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await chrome.runtime.sendMessage({ type: 'RESET_STATS' });
       appState.totalBlocked = 0;
       appState.totalScamBlocked = 0;
+      appState.totalTrackingBlocked = 0;
       renderOverview();
     }
   });
@@ -165,6 +179,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         type = 'ip';
       } else if (target.includes('scam') || target.includes('phish') || target.includes('fake')) {
         type = 'scam';
+      } else if (target.includes('track') || target.includes('analytics') || target.includes('telemetry') || target.includes('hotjar')) {
+        type = 'tracker';
       } else {
         type = 'domain';
       }
@@ -198,7 +214,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     let addedCount = 0;
 
     for (const line of lines) {
-      const type = isTargetIp(line) ? 'ip' : (line.includes('fake') || line.includes('scam') ? 'scam' : 'domain');
+      let type = 'domain';
+      if (isTargetIp(line)) type = 'ip';
+      else if (line.includes('fake') || line.includes('scam')) type = 'scam';
+      else if (line.includes('track') || line.includes('hotjar') || line.includes('clarity')) type = 'tracker';
+
       const res = await chrome.runtime.sendMessage({
         type: 'ADD_CUSTOM_RULE',
         target: line,
@@ -268,6 +288,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (rule.type === 'scam') {
         tagClass = 'scam';
         tagLabel = 'LỪA ĐẢO';
+      } else if (rule.type === 'tracker') {
+        tagClass = 'tracker';
+        tagLabel = 'THEO DÕI';
       } else if (rule.type === 'pattern') {
         tagClass = 'pattern';
         tagLabel = 'PATTERN';

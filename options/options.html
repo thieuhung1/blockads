@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NetShield Pro - Quản Lý Chặn Ads, IP & Chống Lừa Đảo</title>
+  <title>NetShield Pro - Quản Lý Chặn Ads, IP, Lừa Đảo & Chống Theo Dõi</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
@@ -19,7 +19,7 @@
         </div>
         <div class="brand-info">
           <h2>NetShield Pro</h2>
-          <span>Chặn Ads, IP & Lừa Đảo</span>
+          <span>Bảo Vệ Mạng & Quyền Riêng Tư</span>
         </div>
       </div>
 
@@ -41,7 +41,7 @@
             <line x1="6" y1="6" x2="6.01" y2="6"></line>
             <line x1="6" y1="18" x2="6.01" y2="18"></line>
           </svg>
-          <span>Quy Tắc IP, Domain & Lừa Đảo</span>
+          <span>Quy Tắc Lọc & Chặn</span>
         </button>
 
         <button class="nav-item" data-section="whitelist">
@@ -83,8 +83,8 @@
       <section id="section-overview" class="content-section active">
         <div class="page-header">
           <div>
-            <h1 class="page-title">Tổng Quan Bảo Vệ Mạng & Chống Lừa Đảo</h1>
-            <p class="page-desc">Theo dõi hiệu suất lọc gói tin, ngăn chặn lừa đảo và các chỉ số bảo mật thời gian thực.</p>
+            <h1 class="page-title">Tổng Quan Bảo Vệ Mạng & Quyền Riêng Tư</h1>
+            <p class="page-desc">Theo dõi hiệu suất lọc gói tin, chặn thu thập dữ liệu trái phép và chống lừa đảo.</p>
           </div>
           <div class="header-actions">
             <button id="btnResetStats" class="btn-secondary">
@@ -97,7 +97,7 @@
           </div>
         </div>
 
-        <!-- Metrics Cards -->
+        <!-- Metrics Cards (5 Cards) -->
         <div class="stats-row">
           <div class="metric-card cyan">
             <div class="metric-icon">
@@ -123,11 +123,25 @@
             <div class="metric-body">
               <span class="metric-title">Trang lừa đảo bị chặn</span>
               <span class="metric-number" id="dashScamCount">0</span>
-              <span class="metric-note">Mạo danh ngân hàng, VNeID, Phishing</span>
+              <span class="metric-note">Mạo danh ngân hàng, VNeID</span>
             </div>
           </div>
 
           <div class="metric-card emerald">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </div>
+            <div class="metric-body">
+              <span class="metric-title">Theo dõi bị chặn</span>
+              <span class="metric-number" id="dashTrackingCount">0</span>
+              <span class="metric-note">Session Replay, Keylogger</span>
+            </div>
+          </div>
+
+          <div class="metric-card indigo">
             <div class="metric-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
@@ -137,7 +151,7 @@
             <div class="metric-body">
               <span class="metric-title">Địa chỉ IP tùy chỉnh</span>
               <span class="metric-number" id="dashIpRulesCount">0</span>
-              <span class="metric-note">Quy tắc lọc IP mạng nội bộ & toàn cầu</span>
+              <span class="metric-note">Quy tắc lọc IP mạng nội bộ</span>
             </div>
           </div>
 
@@ -151,7 +165,7 @@
             <div class="metric-body">
               <span class="metric-title">Trang web tin cậy</span>
               <span class="metric-number" id="dashWhitelistCount">0</span>
-              <span class="metric-note">Danh sách trắng được cho phép</span>
+              <span class="metric-note">Danh sách trắng</span>
             </div>
           </div>
         </div>
@@ -168,6 +182,17 @@
               <label class="switch">
                 <input type="checkbox" id="dashMasterToggle" checked>
                 <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Khiên cấm thu thập thông tin trái phép (Anti-Tracking & Anti-Fingerprinting)</span>
+                <span class="setting-desc">Chặn các trình ghi lén thao tác màn hình (Hotjar/Clarity), chống đọc trộm bộ nhớ tạm (Clipboard), chống lấy dấu vân tay Canvas và gửi tín hiệu Do-Not-Track.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="dashAntiTrackingToggle" checked>
+                <span class="slider slider-emerald"></span>
               </label>
             </div>
 
@@ -200,8 +225,8 @@
       <section id="section-rules" class="content-section">
         <div class="page-header">
           <div>
-            <h1 class="page-title">Quản Lý Quy Tắc IP, Domain & Lừa Đảo</h1>
-            <p class="page-desc">Chặn trực tiếp các địa chỉ IP mạng máy chủ, tên miền hoặc trang web lừa đảo.</p>
+            <h1 class="page-title">Quản Lý Quy Tắc IP, Domain, Lừa Đảo & Theo Dõi</h1>
+            <p class="page-desc">Chặn trực tiếp các địa chỉ IP mạng máy chủ, tên miền quảng cáo hoặc mã theo dõi.</p>
           </div>
         </div>
 
@@ -215,13 +240,14 @@
           <!-- Single Add Form -->
           <form id="formAddRule" class="form-grid">
             <div class="form-group">
-              <label for="ruleTarget">Địa chỉ IP, Domain hoặc Trang lừa đảo</label>
-              <input type="text" id="ruleTarget" placeholder="VD: 185.220.101.5 hoặc fake-bank.top" required>
+              <label for="ruleTarget">Địa chỉ IP, Domain, Tracker hoặc Trang lừa đảo</label>
+              <input type="text" id="ruleTarget" placeholder="VD: 185.220.101.5 hoặc hotjar.com" required>
             </div>
             <div class="form-group">
               <label for="ruleType">Loại quy tắc</label>
               <select id="ruleType">
                 <option value="auto">Tự động nhận diện</option>
+                <option value="tracker">Trình theo dõi / Thu thập tin (Tracker)</option>
                 <option value="scam">Trang web lừa đảo (Hiện cảnh báo)</option>
                 <option value="ip">Địa chỉ IP mạng (IPv4 / IPv6)</option>
                 <option value="domain">Tên miền quảng cáo (Domain)</option>
@@ -230,7 +256,7 @@
             </div>
             <div class="form-group span-2">
               <label for="ruleNote">Ghi chú / Mô tả (Tùy chọn)</label>
-              <input type="text" id="ruleNote" placeholder="VD: Trang web giả mạo VNeID, máy chủ spam...">
+              <input type="text" id="ruleNote" placeholder="VD: Keylogger form, máy chủ telemetry, fake bank...">
             </div>
             <div class="form-actions span-2">
               <button type="submit" class="btn-primary">
@@ -247,7 +273,7 @@
           <!-- Batch Add Form -->
           <div id="batchAddContainer" class="hidden">
             <p class="batch-desc">Dán danh sách các địa chỉ IP hoặc Domain (mỗi dòng một địa chỉ):</p>
-            <textarea id="batchTextarea" rows="6" placeholder="185.220.101.5&#10;45.33.32.156&#10;popunder-network.com&#10;fake-login-bank.xyz"></textarea>
+            <textarea id="batchTextarea" rows="6" placeholder="185.220.101.5&#10;hotjar.com&#10;clarity.ms&#10;popunder-network.com"></textarea>
             <button id="btnBatchSubmit" class="btn-primary mt-3">
               <span>Nhập tất cả vào bộ lọc</span>
             </button>
@@ -266,6 +292,7 @@
             </div>
             <div class="filter-pills">
               <button class="pill active" data-filter="all">Tất cả</button>
+              <button class="pill" data-filter="tracker">Chỉ Theo Dõi</button>
               <button class="pill" data-filter="scam">Chỉ Lừa Đảo</button>
               <button class="pill" data-filter="ip">Chỉ IP mạng</button>
               <button class="pill" data-filter="domain">Chỉ Domain</button>
@@ -327,7 +354,7 @@
         <div class="page-header">
           <div>
             <h1 class="page-title">Nhật Ký Mạng Trực Tiếp (Live Inspector)</h1>
-            <p class="page-desc">Theo dõi các yêu cầu mạng được tạo ra từ trình duyệt, phát hiện và chặn máy chủ IP lạ hoặc lừa đảo.</p>
+            <p class="page-desc">Theo dõi các yêu cầu mạng được tạo ra từ trình duyệt, phát hiện và chặn máy chủ theo dõi, IP lạ.</p>
           </div>
           <div class="header-actions">
             <button id="btnRefreshLive" class="btn-secondary">
@@ -365,13 +392,13 @@
         <div class="page-header">
           <div>
             <h1 class="page-title">Sao Lưu & Thiết Lập Cấu Hình</h1>
-            <p class="page-desc">Xuất, nhập và đồng bộ danh sách quy tắc chặn IP và lừa đảo.</p>
+            <p class="page-desc">Xuất, nhập và đồng bộ danh sách quy tắc bảo vệ mạng.</p>
           </div>
         </div>
 
         <div class="card-panel">
           <h2 class="card-title">Xuất & Nhập Cấu Hình</h2>
-          <p class="desc-text">Bạn có thể xuất danh sách quy tắc IP, Domain & Lừa đảo tùy chỉnh ra file JSON để lưu trữ hoặc chia sẻ.</p>
+          <p class="desc-text">Bạn có thể xuất danh sách quy tắc IP, Domain, Tracker & Lừa đảo tùy chỉnh ra file JSON để lưu trữ.</p>
 
           <div class="action-buttons-grid">
             <button id="btnExportJson" class="btn-primary">

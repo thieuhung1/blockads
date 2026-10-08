@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NetShield - Chặn Quảng Cáo & Lừa Đảo</title>
+  <title>NetShield - Chặn Ads, Lừa Đảo & Chống Theo Dõi</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -19,7 +19,7 @@
         </div>
         <div class="brand-text">
           <h1 class="brand-title">NetShield Pro</h1>
-          <span class="brand-subtitle">Chặn Ads, IP & Lừa Đảo</span>
+          <span class="brand-subtitle">Chặn Ads, Lừa Đảo & Theo Dõi</span>
         </div>
       </div>
       <button id="btnOpenOptions" class="icon-btn" title="Cài đặt & Bảng điều khiển">
@@ -49,25 +49,42 @@
       </div>
     </div>
 
-    <!-- Anti-Scam Feature Strip -->
-    <div class="anti-scam-strip glass-panel">
-      <div class="strip-left">
-        <div class="strip-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <!-- Security Modules Strip (Anti-Scam & Anti-Tracking) -->
+    <div class="features-dual-strip">
+      <div class="feature-mini-card glass-panel border-rose">
+        <div class="f-left">
+          <svg class="f-icon text-rose" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
+          <div class="f-text">
+            <span class="f-name">Chống Lừa Đảo</span>
+            <span class="f-sub" id="antiScamStatusText">Phishing & Fake Bank</span>
+          </div>
         </div>
-        <div class="strip-info">
-          <span class="strip-title">Khiên Chống Lừa Đảo</span>
-          <span class="strip-sub" id="antiScamStatusText">Cảnh báo Phishing & Fake Bank</span>
-        </div>
+        <label class="switch" title="Bật/Tắt chống lừa đảo">
+          <input type="checkbox" id="antiScamToggleCheckbox" checked>
+          <span class="slider slider-rose"></span>
+        </label>
       </div>
-      <label class="switch" title="Bật/Tắt bảo vệ lừa đảo">
-        <input type="checkbox" id="antiScamToggleCheckbox" checked>
-        <span class="slider slider-rose"></span>
-      </label>
+
+      <div class="feature-mini-card glass-panel border-emerald">
+        <div class="f-left">
+          <svg class="f-icon text-emerald" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+          </svg>
+          <div class="f-text">
+            <span class="f-name">Cấm Thu Thập Tin</span>
+            <span class="f-sub" id="antiTrackingStatusText">Fingerprint & Keylogger</span>
+          </div>
+        </div>
+        <label class="switch" title="Bật/Tắt cấm thu thập thông tin">
+          <input type="checkbox" id="antiTrackingToggleCheckbox" checked>
+          <span class="slider slider-emerald"></span>
+        </label>
+      </div>
     </div>
 
     <!-- Current Site Card -->
@@ -87,24 +104,30 @@
       </label>
     </div>
 
-    <!-- Stats Grid (3 Metrics) -->
-    <div class="stats-grid-three">
+    <!-- Stats Grid (4 Metrics) -->
+    <div class="stats-grid-four">
       <div class="stat-card glass-panel">
         <div class="stat-label">Trang Này</div>
         <div class="stat-value text-cyan" id="tabBlockedCount">0</div>
-        <div class="stat-sub">Quảng cáo & IP</div>
+        <div class="stat-sub">Quảng cáo</div>
       </div>
 
       <div class="stat-card glass-panel">
-        <div class="stat-label">Tổng Chặn</div>
+        <div class="stat-label">Tổng Ads</div>
         <div class="stat-value text-indigo" id="totalBlockedCount">0</div>
-        <div class="stat-sub">Quảng cáo & Ads</div>
+        <div class="stat-sub">Đã ngăn chặn</div>
       </div>
 
       <div class="stat-card glass-panel">
         <div class="stat-label">Lừa Đảo</div>
         <div class="stat-value text-rose" id="totalScamCount">0</div>
         <div class="stat-sub">Trang giả mạo</div>
+      </div>
+
+      <div class="stat-card glass-panel">
+        <div class="stat-label">Theo Dõi</div>
+        <div class="stat-value text-emerald" id="totalTrackingCount">0</div>
+        <div class="stat-sub">Thu thập tin</div>
       </div>
     </div>
 
@@ -117,13 +140,13 @@
           <line x1="6" y1="6" x2="6.01" y2="6"></line>
           <line x1="6" y1="18" x2="6.01" y2="18"></line>
         </svg>
-        <span>Chặn nhanh IP, Domain hoặc Lừa đảo</span>
+        <span>Chặn nhanh IP, Domain hoặc Trình theo dõi</span>
       </div>
       <form id="quickAddForm" class="quick-add-form">
         <input 
           type="text" 
           id="quickAddInput" 
-          placeholder="Nhập IP (185.x) hoặc trang lừa đảo..." 
+          placeholder="Nhập IP, domain hoặc tracker..." 
           required
           autocomplete="off"
         >
@@ -169,7 +192,7 @@
         </svg>
         <span>Mở Bảng Điều Khiển Chuyên Sâu</span>
       </button>
-      <div class="version-tag">NetShield Pro • Chặn Ads, IP & Chống Lừa Đảo</div>
+      <div class="version-tag">NetShield Pro • Chặn Ads, Lừa Đảo & Chống Thu Thập Tin</div>
     </footer>
   </div>
 

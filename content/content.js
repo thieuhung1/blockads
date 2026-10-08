@@ -1,12 +1,19 @@
-// NetShield Content Script: Cosmetic Filtering & Anti-Scam Protection
+// NetShield Content Script: Cosmetic Filtering, Anti-Scam & Anti-Tracking Shield
 
 (async function () {
   const currentHostname = window.location.hostname.toLowerCase();
 
   try {
-    const { enabled, antiScamEnabled, cosmeticFiltering, whitelist } = await chrome.storage.local.get([
+    const {
+      enabled,
+      antiScamEnabled,
+      antiTrackingEnabled,
+      cosmeticFiltering,
+      whitelist
+    } = await chrome.storage.local.get([
       'enabled',
       'antiScamEnabled',
+      'antiTrackingEnabled',
       'cosmeticFiltering',
       'whitelist'
     ]);
@@ -18,12 +25,17 @@
       return;
     }
 
-    // 1. Anti-Scam Protection Modules (If enabled)
+    // 1. Anti-Tracking & Data Harvesting Protection (Cấm thu thập thông tin trái phép)
+    if (antiTrackingEnabled !== false) {
+      initAntiTrackingShield();
+    }
+
+    // 2. Anti-Scam Protection
     if (antiScamEnabled !== false) {
       initAntiScamShield();
     }
 
-    // 2. Cosmetic Filter (If enabled)
+    // 3. Cosmetic Filter
     if (cosmeticFiltering !== false) {
       runCosmeticCleanup();
 
@@ -43,17 +55,70 @@
       window.addEventListener('load', unlockScrolling);
     }
   } catch (e) {
-    // Ignore isolated context errors
+    // Ignore context errors
   }
 
-  // --- Anti-Scam Shield Functions ---
+  // --- 1. Anti-Tracking & Anti-Harvesting Core ---
+  function initAntiTrackingShield() {
+    // A. Bật tín hiệu Do Not Track & Global Privacy Control
+    try {
+      Object.defineProperty(navigator, 'doNotTrack', { get: () => '1', configurable: true });
+      Object.defineProperty(navigator, 'globalPrivacyControl', { get: () => true, configurable: true });
+    } catch {}
+
+    // B. Chống đọc trộm bộ nhớ tạm (Anti-Clipboard Sniffing)
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      const originalReadText = navigator.clipboard.readText.bind(navigator.clipboard);
+      let userGestureTimestamp = 0;
+
+      // Ghi nhận tương tác chuột hoặc phím gần nhất của người dùng
+      window.addEventListener('keydown', () => { userGestureTimestamp = Date.now(); }, true);
+      window.addEventListener('mousedown', () => { userGestureTimestamp = Date.now(); }, true);
+
+      navigator.clipboard.readText = function () {
+        // Chỉ cho phép đọc nếu vừa có thao tác từ người dùng trong vòng 1 giây
+        if (Date.now() - userGestureTimestamp < 1000) {
+          return originalReadText();
+        }
+        console.warn('[NetShield] Đã chặn nỗ lực ngầm đọc bộ nhớ tạm (Clipboard) trái phép!');
+        return Promise.reject(new DOMException('Bị từ chối bởi NetShield Privacy Shield', 'NotAllowedError'));
+      };
+    }
+
+    // C. Chống lấy dấu vân tay trình duyệt (Anti-Canvas Fingerprinting)
+    try {
+      const origToDataURL = HTMLCanvasElement.prototype.toDataURL;
+      HTMLCanvasElement.prototype.toDataURL = function (type, ...args) {
+        // Nếu canvas có kích thước nhỏ thường dùng để lấy hash vân tay (vd: 16x16, 200x50)
+        if (this.width > 0 && this.height > 0 && this.width < 350 && this.height < 150) {
+          const ctx = this.getContext('2d');
+          if (ctx) {
+            try {
+              // Thêm 1 lượng nhiễu siêu nhỏ vi lượng ở pixel góc để bẻ gãy mã hash định danh
+              const imgData = ctx.getImageData(0, 0, 1, 1);
+              imgData.data[0] = (imgData.data[0] + 1) % 256;
+              ctx.putImageData(imgData, 0, 0);
+            } catch {}
+          }
+        }
+        return origToDataURL.call(this, type, ...args);
+      };
+    } catch {}
+
+    // D. Giấu thông tin pin và phần cứng (Tránh fingerprinting qua API pin)
+    if ('getBattery' in navigator) {
+      try {
+        delete navigator.getBattery;
+      } catch {}
+    }
+  }
+
+  // --- 2. Anti-Scam Shield Functions ---
   function initAntiScamShield() {
     neutralizeClickJackingOverlays();
 
-    // Neutralize abusive click events on body attempting to open scam tabs
     document.addEventListener('click', handleScamClickTrap, true);
 
-    // Prevent fake tech-support full-screen hijack
     document.addEventListener('fullscreenchange', () => {
       if (document.fullscreenElement) {
         const text = (document.fullscreenElement.innerText || '').toLowerCase();
@@ -64,11 +129,9 @@
     });
   }
 
-  // Detect and remove invisible full-screen click traps
   function neutralizeClickJackingOverlays() {
     const elements = document.querySelectorAll('div, a, span');
     for (const el of elements) {
-      // Check for elements that span entire screen with extreme z-index
       const style = window.getComputedStyle(el);
       if (style.position === 'fixed' || style.position === 'absolute') {
         const zIndex = parseInt(style.zIndex, 10);
@@ -78,7 +141,6 @@
           const screenW = window.innerWidth;
           const screenH = window.innerHeight;
 
-          // If it covers more than 80% of viewport and is mostly transparent
           if (w >= screenW * 0.8 && h >= screenH * 0.8 && parseFloat(style.opacity) < 0.1) {
             el.remove();
           }
@@ -87,7 +149,6 @@
     }
   }
 
-  // Intercept links leading to known scam patterns
   function handleScamClickTrap(e) {
     const target = e.target.closest('a');
     if (!target || !target.href) return;
@@ -108,7 +169,7 @@
     }
   }
 
-  // --- Cosmetic Ad Cleanup Functions ---
+  // --- 3. Cosmetic Cleanup ---
   function runCosmeticCleanup() {
     const adSelectors = [
       'ins.adsbygoogle',

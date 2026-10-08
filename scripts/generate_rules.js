@@ -1,4 +1,4 @@
-// Script to generate comprehensive static rules for NetShield (Ad blocking + Anti-Scam / Anti-Phishing)
+// Script to generate comprehensive static rules for NetShield (Ad blocking + Anti-Scam + Anti-Tracking / Privacy Shield)
 const fs = require('fs');
 const path = require('path');
 
@@ -60,23 +60,7 @@ const adDomains = [
   "fyber.com",
   "flurry.com",
 
-  // Trackers & Telemetry
-  "scorecardresearch.com",
-  "quantserve.com",
-  "hotjar.com",
-  "clarity.ms",
-  "pixel.facebook.com",
-  "an.facebook.com",
-  "ads-twitter.com",
-  "analytics.tiktok.com",
-  "analytics.pinterest.com",
-  "snap.licdn.com",
-  "ads.linkedin.com",
-  "bat.bing.com",
-  "statcounter.com",
-  "histats.com",
-
-  // Vietnamese Ad Networks & Trackers
+  // Vietnamese Ad Networks
   "eclick.vn",
   "admicro.vn",
   "vietad.vn",
@@ -117,6 +101,57 @@ const adDomains = [
   "authedmine.com",
   "webminepool.com",
   "monerominer.rocks"
+];
+
+// Trackers, Telemetry, Keyloggers, Session Replay & Fingerprinting Domains (Cấm thu thập thông tin trái phép)
+const trackerDomains = [
+  // Session Recording & Keystroke Loggers (Ghi lén thao tác người dùng & phím bấm)
+  "hotjar.com",
+  "clarity.ms",
+  "fullstory.com",
+  "mouseflow.com",
+  "smartlook.com",
+  "crazyegg.com",
+  "luckyorange.com",
+  "inspectlet.com",
+  "logrocket.com",
+  "sessioncam.com",
+  "freshmarketer.com",
+  "heap.io",
+
+  // Analytics, Telemetry & Profiling (Theo dõi và thu thập hồ sơ người dùng)
+  "google-analytics.com",
+  "ssl.google-analytics.com",
+  "googletagmanager.com",
+  "analytics.google.com",
+  "pixel.facebook.com",
+  "an.facebook.com",
+  "connect.facebook.net/signals",
+  "ads-twitter.com",
+  "analytics.tiktok.com",
+  "analytics.pinterest.com",
+  "snap.licdn.com",
+  "ads.linkedin.com",
+  "bat.bing.com",
+  "statcounter.com",
+  "histats.com",
+  "quantserve.com",
+  "scorecardresearch.com",
+  "segment.io",
+  "mixpanel.com",
+  "amplitude.com",
+  "yandex.ru/metrika",
+  "mc.yandex.ru",
+
+  // Fingerprinting & Device ID Harvesters (Thu thập dấu vân tay trình duyệt & phần cứng)
+  "fingerprintjs.com",
+  "fpjs.sh",
+  "api.fpjs.io",
+  "threatmetrix.com",
+  "iovation.com",
+  "maxmind.com/geoip",
+  "sentry.io",
+  "bugsnag.com"
 ];
 
 // Phishing, Scam, Fake Bank, Lottery & Malware Domains
@@ -188,6 +223,15 @@ const scamPatterns = [
   "*://*/*claim-airdrop-reward*"
 ];
 
+// Tracker patterns (Ping beacons, telemetry endpoint, fingerprinting)
+const trackerPatterns = [
+  "*://*/*beacon*",
+  "*://*/*telemetry*",
+  "*://*/*fingerprint*",
+  "*://*/*session-record*",
+  "*://*/*keystroke-logger*"
+];
+
 const resourceTypes = [
   "sub_frame",
   "stylesheet",
@@ -206,7 +250,7 @@ const resourceTypes = [
 let ruleId = 1;
 const rules = [];
 
-// 1. Standard Domain block rules
+// 1. Standard Domain block rules (Ads)
 for (const domain of adDomains) {
   rules.push({
     id: ruleId++,
@@ -219,7 +263,20 @@ for (const domain of adDomains) {
   });
 }
 
-// 2. IP rules
+// 2. Anti-Tracking & Data Harvesting Domains (Cấm thu thập thông tin trái phép)
+for (const tracker of trackerDomains) {
+  rules.push({
+    id: ruleId++,
+    priority: 3, // High priority to strictly block trackers
+    action: { type: "block" },
+    condition: {
+      urlFilter: `||${tracker}^`,
+      resourceTypes: ["script", "xmlhttprequest", "ping", "sub_frame", "image", "other"]
+    }
+  });
+}
+
+// 3. IP rules
 for (const ip of adIps) {
   rules.push({
     id: ruleId++,
@@ -232,7 +289,7 @@ for (const ip of adIps) {
   });
 }
 
-// 3. Pattern rules
+// 4. Pattern rules (Ads)
 for (const pat of adPatterns) {
   rules.push({
     id: ruleId++,
@@ -245,9 +302,21 @@ for (const pat of adPatterns) {
   });
 }
 
-// 4. Scam Domains - Main frame redirects to Warning page, subresources blocked!
+// 5. Tracker Patterns
+for (const tpat of trackerPatterns) {
+  rules.push({
+    id: ruleId++,
+    priority: 2,
+    action: { type: "block" },
+    condition: {
+      urlFilter: tpat,
+      resourceTypes: ["ping", "xmlhttprequest", "script", "other"]
+    }
+  });
+}
+
+// 6. Scam Domains - Main frame redirects to Warning page, subresources blocked!
 for (const scam of scamDomains) {
-  // Main frame -> Redirect to Warning Interstitial
   rules.push({
     id: ruleId++,
     priority: 20,
@@ -263,7 +332,6 @@ for (const scam of scamDomains) {
     }
   });
 
-  // Subresources -> Blocked immediately
   rules.push({
     id: ruleId++,
     priority: 20,
@@ -275,7 +343,7 @@ for (const scam of scamDomains) {
   });
 }
 
-// 5. Scam Patterns
+// 7. Scam Patterns
 for (const spat of scamPatterns) {
   rules.push({
     id: ruleId++,

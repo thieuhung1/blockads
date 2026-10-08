@@ -1,44 +1,44 @@
-# NetShield Pro - Chặn Quảng Cáo, IP Mạng & Khiên Chống Lừa Đảo (Manifest V3)
+# NetShield Pro - Chặn Quảng Cáo, IP Mạng, Lừa Đảo & Chống Thu Thập Thông Tin (Manifest V3)
 
-**NetShield Pro** là tiện ích mở rộng (Browser Extension) hiệu năng cao dành cho các trình duyệt Chromium (Google Chrome, Microsoft Edge, Brave, Cốc Cốc...) chuẩn **Manifest V3**. Tiện ích kết hợp bộ lọc quảng cáo tầng mạng, chặn IP máy chủ độc hại và **Khiên Chống Lừa Đảo (Anti-Phishing / Anti-Scam Shield)** thông minh.
-
----
-
-## 🛡️ Hệ Thống Chống Lừa Đảo (Anti-Phishing Shield) Mới
-
-1. **Ngăn Chặn & Cảnh Báo Trang Web Lừa Đảo (Warning Interstitial)**:
-   - Tự động nhận diện các website mạo danh ngân hàng (Vietcombank, Techcombank, MBBank...), mạo danh cổng dịch vụ công VNeID, cơ quan chức năng, hoặc các trang lừa trúng thưởng/airdrop.
-   - Thay vì chỉ làm trang web bị lỗi trắng xóa, tiện ích sẽ hiển thị **Trang Cảnh Báo An Toàn Toàn Màn Hình** với giao diện cảnh báo đỏ rực, phân tích rủi ro, nút *"Quay lại an toàn"* và nút *"Vẫn tiếp tục"* (nếu người dùng hiểu rõ rủi ro).
-
-2. **Chống Bẫy Nhấp Chuột (Anti-Clickjacking & Fake Fullscreen)**:
-   - Tự động phát hiện và gỡ bỏ các lớp phủ tàng hình (`overlay`) che phủ toàn màn hình mà các trang web lậu dùng để ép mở tab mới sang trang cá cược, lừa đảo.
-   - Ngăn chặn bẫy chiếm quyền toàn màn hình giả mạo giao diện Windows Defender / Virus Alert.
-
-3. **Công Tắc Khiên Lừa Đảo Độc Lập**:
-   - Dễ dàng bật/tắt tính năng chống lừa đảo trực tiếp từ cửa sổ Popup hoặc Bảng điều khiển.
-   - Thống kê thời gian thực số lượng mối đe dọa lừa đảo đã ngăn chặn.
+**NetShield Pro** là tiện ích mở rộng (Browser Extension) toàn diện dành cho các trình duyệt Chromium (Google Chrome, Microsoft Edge, Brave, Cốc Cốc...) chuẩn **Manifest V3**. Tiện ích tích hợp 3 lớp bảo vệ chuyên sâu: Chặn quảng cáo & IP độc hại, Khiên chống lừa đảo (Anti-Phishing) và **Khiên cấm thu thập thông tin trái phép (Anti-Tracking & Privacy Shield)**.
 
 ---
 
-## 🌟 Các Tính Năng Khác
+## 🔒 1. Khiên Cấm Thu Thập Thông Tin Trái Phép (Anti-Tracking & Privacy Shield)
 
-1. **Chặn Quảng Cáo Theo Địa Chỉ IP Mạng (Network IP Blocking)**:
-   - Chặn trực tiếp các yêu cầu gửi đến các địa chỉ IP máy chủ quảng cáo (IPv4 / IPv6) bằng Declarative Net Request.
-   - Quản lý Dynamic Rules: thêm, xóa, bật/tắt dải IP bất kỳ lúc nào.
+Tính năng này bảo vệ tuyệt đối quyền riêng tư và dữ liệu nhạy cảm của bạn khi lướt web:
 
-2. **Chặn Theo Tên Miền & Mạng Quảng Cáo (178+ Rules)**:
-   - Tích hợp sẵn bộ quy tắc tĩnh chặn Google AdSense, DoubleClick, Facebook Trackers, Taboola, Outbrain, PopAds, Admicro, Eclick, mã độc đào coin...
+- **Chặn Trình Quay Lén Màn Hình & Phím Bấm (Session Replay & Keyloggers)**:
+  - Ngăn chặn hoàn toàn các công cụ ghi hình chuột, thao tác form và bàn phím ngầm (như Hotjar, Microsoft Clarity, FullStory, Mouseflow, Smartlook, LogRocket, Yandex Metrica...).
+- **Chống Đọc Trộm Bộ Nhớ Tạm (Anti-Clipboard Sniffing)**:
+  - Chặn đứng các đoạn mã JavaScript độc hại tự động đọc dữ liệu trong Clipboard (`navigator.clipboard.readText`) để đánh cắp mật khẩu, mã OTP, số thẻ tín dụng hoặc địa chỉ ví tiền điện tử mà bạn vừa sao chép.
+- **Chống Lấy Dấu Vân Tay Trình Duyệt (Anti-Canvas Fingerprinting)**:
+  - Tự động gây nhiễu vi lượng các hàm render đồ họa Canvas (`toDataURL` / `getImageData`) để các công ty quảng cáo và nhà môi giới dữ liệu (Data Brokers, FingerprintJS) không thể tạo mã định danh duy nhất theo dõi bạn qua các trang web khác nhau.
+- **Tự Động Bật Tín Hiệu Không Theo Dõi (Do Not Track & Global Privacy Control)**:
+  - Tự động kích hoạt các header và thuộc tính `DNT: 1` và `Sec-GPC: 1` để thông báo cho máy chủ từ chối việc bán hoặc chia sẻ dữ liệu của bạn.
+- **Giấu Thông Tin Pin & Phần Cứng**:
+  - Vô hiệu hóa các API rò rỉ trạng thái pin (`getBattery`) để ngăn chặn việc nhận dạng phần cứng thiết bị.
 
-3. **Giao Diện Cyber Dark Hiện Đại**:
-   - Popup hiển thị khiên nguồn Glowing Neon, thống kê 3 chỉ số (Trang này, Tổng quảng cáo, Lừa đảo đã chặn), ô chặn nhanh và danh sách yêu cầu vừa chặn.
-   - Bảng điều khiển toàn màn hình (Dashboard) đầy đủ tính năng: Quản lý quy tắc, Danh sách trắng (Whitelist), Nhật ký mạng trực tiếp (Live Network Inspector) và Sao lưu/Khôi phục (JSON).
+---
+
+## 🛡️ 2. Khiên Chống Lừa Đảo (Anti-Phishing & Anti-Scam Shield)
+
+- **Cảnh Báo Trang Web Lừa Đảo Toàn Màn Hình**: Tự động phát hiện các website mạo danh ngân hàng (Vietcombank, MB, Techcombank...), giả mạo cổng dịch vụ công VNeID, cơ quan nhà nước, trúng thưởng giả mạo.
+- **Chống Bẫy Nhấp Chuột (Anti-Clickjacking)**: Tự động loại bỏ các lớp phủ tàng hình trên các trang web lậu ép nhảy tab mới sang trang cá cược, lừa đảo.
+
+---
+
+## 🌐 3. Chặn Quảng Cáo Tầng Mạng & Địa Chỉ IP (Network IP Blocking)
+
+- **211+ Quy Tắc Tĩnh Chuẩn Declarative Net Request**: Chặn Google AdSense, DoubleClick, Facebook Trackers, PopAds, Admicro, Eclick, mã độc đào coin...
+- **Chặn Trực Tiếp Theo Địa Chỉ IP Máy Chủ (IPv4 / IPv6)**: Nhập nhanh IP hoặc dán danh sách IP máy chủ quảng cáo để chặn tận gốc.
+- **Nhật Ký Mạng Trực Tiếp (Live Network Inspector)**: Quét các kết nối mạng thời gian thực và cho phép chặn 1-click bất kỳ máy chủ nào.
 
 ---
 
 ## 🚀 Cách Cập Nhật Extension Trong Trình Duyệt
 
-Vì tiện ích đã được nâng cấp thêm tính năng mới:
 1. Mở trang quản lý tiện ích: `chrome://extensions` (hoặc `edge://extensions`).
-2. Tìm thẻ tiện ích **NetShield**.
-3. Bấm vào nút **Biểu tượng xoay vòng (Cập nhật / Reload)** trên thẻ NetShield để trình duyệt nạp lại code mới nhất.
-4. Trải nghiệm ngay các tính năng chống lừa đảo và chặn IP mới!
+2. Tìm thẻ tiện ích **NetShield Pro**.
+3. Bấm vào **biểu tượng mũi tên xoay tròn (Tải lại / Reload)** trên thẻ tiện ích.
+4. Mở Popup lên và bạn sẽ thấy công tắc **Cấm Thu Thập Tin** màu xanh ngọc cùng 4 thẻ thống kê số liệu chi tiết!
