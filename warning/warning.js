@@ -7,18 +7,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let blockedUrl = '';
 
+  function getSafeHttpUrl(raw) {
+    if (!raw || typeof raw !== 'string') return null;
+    try {
+      const parsed = new URL(raw);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return parsed.href;
+      }
+    } catch {}
+    return null;
+  }
+
   // 1. Try to read from query params or storage
   const urlParams = new URLSearchParams(window.location.search);
   const paramUrl = urlParams.get('url');
 
-  if (paramUrl) {
-    blockedUrl = paramUrl;
+  if (paramUrl && getSafeHttpUrl(paramUrl)) {
+    blockedUrl = getSafeHttpUrl(paramUrl);
   } else {
     try {
       const data = await chrome.storage.local.get(['lastBlockedScamUrl']);
-      blockedUrl = data.lastBlockedScamUrl || 'https://unknown-threat-target.xyz';
+      blockedUrl = getSafeHttpUrl(data.lastBlockedScamUrl) || 'https://unknown-threat-target.xyz';
     } catch {
-      blockedUrl = 'Trang web độc hại chưa xác định';
+      blockedUrl = 'https://unknown-threat-target.xyz';
     }
   }
 
@@ -38,13 +49,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const confirmed = confirm('CẢNH BÁO NGUY HIỂM: Bạn có chắc chắn muốn truy cập vào trang này? Trang web có thể cố gắng lừa đảo hoặc cài mã độc vào thiết bị của bạn!');
     if (!confirmed) return;
 
+    const safeDestination = getSafeHttpUrl(blockedUrl);
+    if (!safeDestination) {
+      alert('Địa chỉ không an toàn hoặc không hợp lệ.');
+      window.location.href = 'https://www.google.com';
+      return;
+    }
+
     try {
-      let hostname = '';
-      try {
-        hostname = new URL(blockedUrl).hostname;
-      } catch {
-        hostname = blockedUrl;
-      }
+      const parsed = new URL(safeDestination);
+      const hostname = parsed.hostname.toLowerCase();
 
       // Add to temporary bypass list
       await chrome.runtime.sendMessage({
@@ -52,10 +66,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         domain: hostname
       });
 
-      // Redirect user to the original destination
-      window.location.href = blockedUrl;
+      // Redirect user to the validated safe destination
+      window.location.href = safeDestination;
     } catch {
-      window.location.href = blockedUrl;
+      window.location.href = 'https://www.google.com';
     }
   });
 });

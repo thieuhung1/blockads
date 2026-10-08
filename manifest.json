@@ -59,7 +59,12 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "content/yt_main_world.js",
+        "content/yt_main_world.js"
+      ],
+      "matches": ["*://*.youtube.com/*"]
+    },
+    {
+      "resources": [
         "warning/warning.html",
         "warning/warning.css",
         "warning/warning.js",

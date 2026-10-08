@@ -597,16 +597,27 @@ async function handleMessage(message, sender) {
 
     case 'ADD_CUSTOM_RULE': {
       const { target, type, note } = message;
-      if (!target) return { success: false, error: 'Thiếu mục tiêu chặn' };
+      if (!target || typeof target !== 'string') return { success: false, error: 'Thiếu mục tiêu chặn hoặc dữ liệu không hợp lệ' };
+
+      const cleanTarget = target.trim()
+        .replace(/^(https?:\/\/)/i, '')
+        .replace(/\/.*$/, '')
+        .replace(/[\r\n\t]/g, '')
+        .slice(0, 255);
+
+      if (!cleanTarget) return { success: false, error: 'Mục tiêu không hợp lệ' };
+
+      const validTypes = ['ip', 'domain', 'scam', 'tracker', 'pattern'];
+      const resolvedType = validTypes.includes(type) ? type : (isTargetIp(cleanTarget) ? 'ip' : 'domain');
 
       const { customRules, ruleIdCounter } = await chrome.storage.local.get(['customRules', 'ruleIdCounter']);
       const counter = (ruleIdCounter || DYNAMIC_RULE_START_ID) + 1;
 
       const newRule = {
         id: counter,
-        target: target.trim(),
-        type: type || (isTargetIp(target) ? 'ip' : 'domain'),
-        note: note || '',
+        target: cleanTarget,
+        type: resolvedType,
+        note: (typeof note === 'string' ? note.slice(0, 255) : ''),
         enabled: true,
         createdAt: new Date().toISOString()
       };
@@ -679,11 +690,30 @@ async function handleMessage(message, sender) {
 
     case 'IMPORT_CONFIG': {
       const { config } = message;
-      if (!config) return { success: false, error: 'Dữ liệu không hợp lệ' };
+      if (!config || typeof config !== 'object') return { success: false, error: 'Dữ liệu không hợp lệ' };
 
       const toSet = {};
-      if (Array.isArray(config.customRules)) toSet.customRules = config.customRules;
-      if (Array.isArray(config.whitelist)) toSet.whitelist = config.whitelist;
+      if (Array.isArray(config.customRules)) {
+        const validTypes = ['ip', 'domain', 'scam', 'tracker', 'pattern'];
+        toSet.customRules = config.customRules
+          .filter(r => r && typeof r === 'object' && typeof r.target === 'string')
+          .map((r, idx) => ({
+            id: typeof r.id === 'number' ? r.id : (DYNAMIC_RULE_START_ID + idx + 1),
+            target: r.target.trim().replace(/[\r\n\t]/g, '').slice(0, 255),
+            type: validTypes.includes(r.type) ? r.type : 'domain',
+            note: typeof r.note === 'string' ? r.note.slice(0, 255) : '',
+            enabled: r.enabled !== false,
+            createdAt: typeof r.createdAt === 'string' ? r.createdAt : new Date().toISOString()
+          }));
+      }
+
+      if (Array.isArray(config.whitelist)) {
+        toSet.whitelist = config.whitelist
+          .filter(w => typeof w === 'string')
+          .map(w => w.toLowerCase().trim().replace(/[\r\n\t]/g, '').slice(0, 255))
+          .filter(w => w.length > 0);
+      }
+
       if (typeof config.antiScamEnabled === 'boolean') toSet.antiScamEnabled = config.antiScamEnabled;
       if (typeof config.antiTrackingEnabled === 'boolean') toSet.antiTrackingEnabled = config.antiTrackingEnabled;
       if (typeof config.cosmeticFiltering === 'boolean') toSet.cosmeticFiltering = config.cosmeticFiltering;
