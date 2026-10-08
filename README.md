@@ -1,6 +1,16 @@
-# NetShield Pro - Chặn Quảng Cáo, IP Mạng, Lừa Đảo & Chống Thu Thập Thông Tin (Manifest V3)
+# NetShield Pro - Chặn Ads, IP Mạng, Lừa Đảo, Chống Thu Thập Tin & Ẩn Danh IP WebRTC (Manifest V3)
 
-**NetShield Pro** là tiện ích mở rộng (Browser Extension) toàn diện dành cho các trình duyệt Chromium (Google Chrome, Microsoft Edge, Brave, Cốc Cốc...) chuẩn **Manifest V3**. Tiện ích tích hợp 3 lớp bảo vệ chuyên sâu: Chặn quảng cáo & IP độc hại, Khiên chống lừa đảo (Anti-Phishing) và **Khiên cấm thu thập thông tin trái phép (Anti-Tracking & Privacy Shield)**.
+**NetShield Pro** là tiện ích mở rộng (Browser Extension) toàn diện dành cho các trình duyệt Chromium (Google Chrome, Microsoft Edge, Brave, Cốc Cốc...) chuẩn **Manifest V3**. Tiện ích tích hợp đa tầng bảo vệ chuyên sâu: Chặn quảng cáo & IP độc hại, Khiên chống lừa đảo (Anti-Phishing), Khiên cấm thu thập thông tin trái phép (Anti-Tracking) và **Khiên chống rò rỉ IP qua WebRTC & Ẩn danh IP (WebRTC IP Leak Shield)**.
+
+---
+
+## 🍓 1. Khiên Chống Rò Rỉ IP Thật Qua WebRTC & Ẩn Danh IP (WebRTC IP Leak Shield)
+
+Ngay cả khi bạn dùng VPN hay Proxy, nhiều trang web và công ty quảng cáo vẫn có thể lấy được địa chỉ IP thật nội bộ hoặc IP công cộng của bạn thông qua giao thức WebRTC (gọi video/P2P trên trình duyệt). Tính năng này giải quyết triệt để nguy cơ đó:
+
+- **Khóa Rò Rỉ IP Cấp Trình Duyệt (Chrome Privacy Policy)**: Kích hoạt chính sách `disable_non_proxied_udp`, chặn mọi luồng UDP không kiểm soát từ WebRTC có khả năng để lộ IP thực tế của máy.
+- **Lọc Gói Tin ICE Candidate Tầng Trang (Dual-layer ICE Filtering)**: Can thiệp trực tiếp vào `RTCPeerConnection` trong trang web, lọc sạch các gói `typ host` và `typ srflx` chứa địa chỉ IPv4/IPv6 thật của thiết bị.
+- **Thẻ Trạng Thái IP Thời Gian Thực (Live Public IP Inspector)**: Hiển thị địa chỉ IP công cộng hiện tại và biểu tượng ổ khóa bảo vệ WebRTC ngay trên giao diện Popup. Bạn có thể bật/tắt khiên chống rò rỉ IP bất cứ lúc nào chỉ với một cú nhấp chuột.
 
 ---
 

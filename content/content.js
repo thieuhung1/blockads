@@ -217,6 +217,30 @@
         delete navigator.getBattery;
       } catch {}
     }
+
+    // E. Chống lộ IP qua WebRTC (Anti-WebRTC IP Leak)
+    try {
+      if (window.RTCPeerConnection) {
+        const origAddEventListener = RTCPeerConnection.prototype.addEventListener;
+        RTCPeerConnection.prototype.addEventListener = function (type, listener, options) {
+          if (type === 'icecandidate') {
+            const wrapped = function (e) {
+              if (e && e.candidate && e.candidate.candidate) {
+                const cand = e.candidate.candidate;
+                if (/typ host|typ srflx/i.test(cand) && (/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(cand))) {
+                  return; // Chặn rò rỉ IP ngầm
+                }
+              }
+              if (typeof listener === 'function') {
+                listener.call(this, e);
+              }
+            };
+            return origAddEventListener.call(this, type, wrapped, options);
+          }
+          return origAddEventListener.call(this, type, listener, options);
+        };
+      }
+    } catch {}
   }
 
   // --- 3. Anti-Scam Shield Functions ---

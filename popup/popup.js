@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const antiScamStatusText = document.getElementById('antiScamStatusText');
   const antiTrackingToggleCheckbox = document.getElementById('antiTrackingToggleCheckbox');
   const antiTrackingStatusText = document.getElementById('antiTrackingStatusText');
+  const currentPublicIpEl = document.getElementById('currentPublicIp');
+  const webrtcToggleCheckbox = document.getElementById('webrtcToggleCheckbox');
+  const webrtcStatusLabel = document.getElementById('webrtcStatusLabel');
+  const webrtcDot = document.getElementById('webrtcDot');
   const siteHostnameEl = document.getElementById('siteHostname');
   const siteFaviconEl = document.getElementById('siteFavicon');
   const siteProtectionLabel = document.getElementById('siteProtectionLabel');
@@ -82,6 +86,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       antiTrackingToggleCheckbox.checked = isAntiTrackingEnabled;
       updateAntiTrackingUI(isAntiTrackingEnabled);
 
+      // WebRTC Protection
+      const isWebRTCProtected = response.webrtcProtectionEnabled !== false;
+      webrtcToggleCheckbox.checked = isWebRTCProtected;
+      updateWebRTCUI(isWebRTCProtected);
+
       // Whitelist check
       const isWhitelisted = response.whitelist.some(w =>
         currentHostname && (currentHostname === w || currentHostname.endsWith('.' + w))
@@ -132,6 +141,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       antiTrackingStatusText.textContent = 'Đã tắt khiên';
       antiTrackingStatusText.style.color = '#94a3b8';
+    }
+  }
+
+  function updateWebRTCUI(enabled) {
+    if (enabled) {
+      webrtcStatusLabel.textContent = 'Chống lộ WebRTC: ĐÃ KHÓA KÍN';
+      webrtcStatusLabel.style.color = '#6ee7b7';
+      webrtcDot.className = 'webrtc-dot';
+    } else {
+      webrtcStatusLabel.textContent = 'Chống lộ WebRTC: ĐÃ MỞ (RỦI RO)';
+      webrtcStatusLabel.style.color = '#fb7185';
+      webrtcDot.className = 'webrtc-dot disabled';
+    }
+  }
+
+  async function loadPublicIP() {
+    try {
+      const res = await chrome.runtime.sendMessage({ type: 'GET_CURRENT_IP' });
+      if (res && res.success && res.ip) {
+        currentPublicIpEl.textContent = res.ip;
+      } else {
+        currentPublicIpEl.textContent = 'Đã ẩn danh';
+      }
+    } catch {
+      currentPublicIpEl.textContent = 'Bảo vệ ẩn danh';
     }
   }
 
@@ -256,6 +290,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshState();
   });
 
+  webrtcToggleCheckbox.addEventListener('change', async () => {
+    const isProtected = webrtcToggleCheckbox.checked;
+    updateWebRTCUI(isProtected);
+    await chrome.runtime.sendMessage({
+      type: 'TOGGLE_WEBRTC_PROTECTION',
+      enabled: isProtected
+    });
+  });
+
   siteToggleCheckbox.addEventListener('change', async () => {
     if (!currentHostname) return;
     const res = await chrome.runtime.sendMessage({
@@ -346,4 +389,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   await refreshState();
+  loadPublicIP();
 });

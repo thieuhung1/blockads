@@ -18,6 +18,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[NetShield] Installed/Updated:', details.reason);
   await initializeStorage();
   await syncRulesWithStorage();
+  const { webrtcProtectionEnabled } = await chrome.storage.local.get(['webrtcProtectionEnabled']);
+  await applyWebRTCProtection(webrtcProtectionEnabled !== false);
   updateBadgeForAllTabs();
 });
 
@@ -25,7 +27,28 @@ chrome.runtime.onStartup.addListener(async () => {
   console.log('[NetShield] Startup');
   await initializeStorage();
   await syncRulesWithStorage();
+  const { webrtcProtectionEnabled } = await chrome.storage.local.get(['webrtcProtectionEnabled']);
+  await applyWebRTCProtection(webrtcProtectionEnabled !== false);
 });
+
+// Protect IP from WebRTC leak (chống rò rỉ IP ngầm)
+async function applyWebRTCProtection(enabled) {
+  if (chrome.privacy && chrome.privacy.network && chrome.privacy.network.webRTCIPHandlingPolicy) {
+    try {
+      if (enabled) {
+        await chrome.privacy.network.webRTCIPHandlingPolicy.set({
+          value: 'disable_non_proxied_udp'
+        });
+        console.log('[NetShield] WebRTC IP leak protection ACTIVE (disable_non_proxied_udp)');
+      } else {
+        await chrome.privacy.network.webRTCIPHandlingPolicy.clear({});
+        console.log('[NetShield] WebRTC IP leak protection CLEARED');
+      }
+    } catch (err) {
+      console.warn('[NetShield] WebRTC policy error:', err);
+    }
+  }
+}
 
 // Setup default storage if not present
 async function initializeStorage() {
@@ -33,6 +56,7 @@ async function initializeStorage() {
     'enabled',
     'antiScamEnabled',
     'antiTrackingEnabled',
+    'webrtcProtectionEnabled',
     'cosmeticFiltering',
     'totalBlocked',
     'totalScamBlocked',
@@ -49,6 +73,7 @@ async function initializeStorage() {
     enabled: data.enabled !== undefined ? data.enabled : true,
     antiScamEnabled: data.antiScamEnabled !== undefined ? data.antiScamEnabled : true,
     antiTrackingEnabled: data.antiTrackingEnabled !== undefined ? data.antiTrackingEnabled : true,
+    webrtcProtectionEnabled: data.webrtcProtectionEnabled !== undefined ? data.webrtcProtectionEnabled : true,
     cosmeticFiltering: data.cosmeticFiltering !== undefined ? data.cosmeticFiltering : true,
     totalBlocked: data.totalBlocked || 0,
     totalScamBlocked: data.totalScamBlocked || 0,
@@ -465,6 +490,7 @@ async function handleMessage(message, sender) {
         'enabled',
         'antiScamEnabled',
         'antiTrackingEnabled',
+        'webrtcProtectionEnabled',
         'cosmeticFiltering',
         'totalBlocked',
         'totalScamBlocked',
@@ -482,6 +508,7 @@ async function handleMessage(message, sender) {
         enabled: data.enabled !== false,
         antiScamEnabled: data.antiScamEnabled !== false,
         antiTrackingEnabled: data.antiTrackingEnabled !== false,
+        webrtcProtectionEnabled: data.webrtcProtectionEnabled !== false,
         cosmeticFiltering: data.cosmeticFiltering !== false,
         totalBlocked: data.totalBlocked || 0,
         totalScamBlocked: data.totalScamBlocked || 0,
@@ -514,6 +541,23 @@ async function handleMessage(message, sender) {
       await chrome.storage.local.set({ antiTrackingEnabled: isAntiTrackingEnabled });
       await syncRulesWithStorage();
       return { success: true, antiTrackingEnabled: isAntiTrackingEnabled };
+    }
+
+    case 'TOGGLE_WEBRTC_PROTECTION': {
+      const val = message.enabled;
+      await chrome.storage.local.set({ webrtcProtectionEnabled: val });
+      await applyWebRTCProtection(val);
+      return { success: true, webrtcProtectionEnabled: val };
+    }
+
+    case 'GET_CURRENT_IP': {
+      try {
+        const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
+        const json = await res.json();
+        return { success: true, ip: json.ip };
+      } catch {
+        return { success: false, error: 'Không thể kết nối máy chủ IP' };
+      }
     }
 
     case 'TOGGLE_COSMETIC': {

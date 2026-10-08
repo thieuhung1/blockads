@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     enabled: true,
     antiScamEnabled: true,
     antiTrackingEnabled: true,
+    webrtcProtectionEnabled: true,
     cosmeticFiltering: true,
     totalBlocked: 0,
     totalScamBlocked: 0,
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const dashMasterToggle = document.getElementById('dashMasterToggle');
   const dashAntiScamToggle = document.getElementById('dashAntiScamToggle');
   const dashAntiTrackingToggle = document.getElementById('dashAntiTrackingToggle');
+  const dashWebRTCToggle = document.getElementById('dashWebRTCToggle');
   const dashCosmeticToggle = document.getElementById('dashCosmeticToggle');
   const btnResetStats = document.getElementById('btnResetStats');
 
@@ -111,6 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     dashMasterToggle.checked = appState.enabled;
     dashAntiScamToggle.checked = appState.antiScamEnabled !== false;
     dashAntiTrackingToggle.checked = appState.antiTrackingEnabled !== false;
+    if (dashWebRTCToggle) dashWebRTCToggle.checked = appState.webrtcProtectionEnabled !== false;
     dashCosmeticToggle.checked = appState.cosmeticFiltering;
   }
 
@@ -135,6 +138,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     appState.antiTrackingEnabled = val;
     renderOverview();
   });
+
+  if (dashWebRTCToggle) {
+    dashWebRTCToggle.addEventListener('change', async () => {
+      const val = dashWebRTCToggle.checked;
+      await chrome.runtime.sendMessage({ type: 'TOGGLE_WEBRTC_PROTECTION', enabled: val });
+      appState.webrtcProtectionEnabled = val;
+    });
+  }
 
   dashCosmeticToggle.addEventListener('change', async () => {
     const val = dashCosmeticToggle.checked;

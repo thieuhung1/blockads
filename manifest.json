@@ -9,7 +9,9 @@
     "storage",
     "tabs",
     "activeTab",
-    "webRequest"
+    "webRequest",
+    "privacy",
+    "proxy"
   ],
   "host_permissions": [
     "<all_urls>"
