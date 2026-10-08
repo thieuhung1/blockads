@@ -1,0 +1,80 @@
+/* NetShield - Cosmetic Ad Filtering Stylesheet */
+
+/* Google Ads & DoubleClick Containers */
+.adsbygoogle,
+ins.adsbygoogle,
+div[id^="google_ads_"],
+div[id^="div-gpt-ad-"],
+div[id*="-ad-slot-"],
+iframe[id^="google_ads_frame"],
+iframe[src*="doubleclick.net"],
+iframe[src*="googlesyndication.com"],
+iframe[src*="googleadservices.com"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Common Generic Ad Selectors */
+div.advertisement,
+div.ad-banner,
+div.ad-wrapper,
+div.ad-slot,
+div.ad-container,
+div.ad-placeholder,
+div.ad-box,
+div.ad_top,
+div.ad_bottom,
+div.ad_sidebar,
+div.banner-ad,
+div.banner_ad,
+div.banner-ads,
+div.sponsor-banner,
+div.sponsored-post,
+div.sponsored-content,
+div[class*="ad-banner"],
+div[class*="ad_unit"],
+div[class*="sponsor_banner"],
+div[data-ad-unit],
+div[data-ad-client],
+div[data-ad-slot] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Native & Recommended Content Ad Networks (Taboola, Outbrain, MGID, Eclick, Admicro) */
+.taboola-container,
+div[id^="taboola-"],
+div[id^="outbrain_"],
+.outbrain-container,
+div[class*="outbrain"],
+div[id^="mgid_"],
+div[class*="mgid_"],
+div[class*="eclick-"],
+div[id*="admicro_"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+}
+
+/* Video Pre-roll / Floating Ad Overlay Containers */
+div.floating-ad-container,
+div.sticky-ad-bar,
+div.corner-ad-box,
+div[id*="stick-ad"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Unfreeze scrolling if anti-adblock locks page */
+html.netshield-unlock,
+body.netshield-unlock {
+  overflow: auto !important;
+  position: static !important;
+}

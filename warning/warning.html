@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CẢNH BÁO: Đã Chặn Trang Web Lừa Đảo - NetShield</title>
+  <link rel="stylesheet" href="warning.css">
+</head>
+<body>
+  <div class="warning-wrapper">
+    <div class="glow-orb"></div>
+    <div class="warning-card">
+      <div class="icon-pulse">
+        <svg class="shield-warn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="12" y1="8" x2="12" y2="12" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="12" y1="16" x2="12.01" y2="16" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div class="badge-danger">
+        <span class="dot"></span> PHÁT HIỆN MỐI ĐE DỌA LỪA ĐẢO
+      </div>
+
+      <h1 class="warning-title">Trang Web Này Đã Bị Chặn</h1>
+      
+      <p class="warning-desc">
+        Hệ thống bảo vệ mạng <strong>NetShield</strong> đã ngăn chặn kết nối này vì phát hiện dấu hiệu lừa đảo (Phishing), đánh cắp thông tin tài khoản hoặc phân phối mã độc nguy hiểm.
+      </p>
+
+      <div class="url-box">
+        <div class="url-label">Địa chỉ độc hại đã bị ngăn chặn:</div>
+        <div class="url-target" id="blockedUrlDisplay">Đang tải địa chỉ...</div>
+      </div>
+
+      <div class="threat-details">
+        <div class="threat-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span><strong>Mối nguy:</strong> Giả mạo giao diện đăng nhập ngân hàng, ví tiền điện tử hoặc lừa trúng thưởng.</span>
+        </div>
+        <div class="threat-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span><strong>Khuyến cáo:</strong> Tuyệt đối không nhập mật khẩu, mã OTP, số điện thoại hoặc thông tin cá nhân.</span>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button id="btnGoBack" class="btn-safety">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Quay Lại Vùng An Toàn (Khuyên Dùng)</span>
+        </button>
+
+        <button id="btnProceedAnyway" class="btn-bypass">
+          <span>Tôi hiểu rủi ro, tiếp tục truy cập</span>
+        </button>
+      </div>
+
+      <div class="warning-footer">
+        Được bảo vệ bởi NetShield Anti-Scam Core • Manifest V3
+      </div>
+    </div>
+  </div>
+
+  <script src="warning.js"></script>
+</body>
+</html>

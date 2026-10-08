@@ -1,0 +1,303 @@
+// Script to generate comprehensive static rules for NetShield (Ad blocking + Anti-Scam / Anti-Phishing)
+const fs = require('fs');
+const path = require('path');
+
+const adDomains = [
+  // Major Ad Networks
+  "doubleclick.net",
+  "googleadservices.com",
+  "googlesyndication.com",
+  "adservice.google.com",
+  "pagead2.googlesyndication.com",
+  "googleads.g.doubleclick.net",
+  "admob.com",
+  "ads.youtube.com",
+  "adnxs.com",
+  "criteo.com",
+  "criteo.net",
+  "rubiconproject.com",
+  "pubmatic.com",
+  "taboola.com",
+  "outbrain.com",
+  "popads.net",
+  "popcash.net",
+  "propellerads.com",
+  "adcash.com",
+  "mgid.com",
+  "revcontent.com",
+  "adroll.com",
+  "smartadserver.com",
+  "openx.net",
+  "sovrn.com",
+  "bidswitch.net",
+  "casalemedia.com",
+  "indexww.com",
+  "moatads.com",
+  "advertising.com",
+  "exponential.com",
+  "adform.net",
+  "lijit.com",
+  "sharethrough.com",
+  "gumgum.com",
+  "teads.tv",
+  "yieldmo.com",
+  "contextweb.com",
+  "media.net",
+  "sonobi.com",
+  "triplelift.com",
+  "unruly.co",
+  "undertone.com",
+  "spotxchange.com",
+  "spotx.tv",
+  "tremorhub.com",
+  "inmobi.com",
+  "applovin.com",
+  "vungle.com",
+  "chartboost.com",
+  "unityads.unity3d.com",
+  "ironsrc.com",
+  "adcolony.com",
+  "fyber.com",
+  "flurry.com",
+
+  // Trackers & Telemetry
+  "scorecardresearch.com",
+  "quantserve.com",
+  "hotjar.com",
+  "clarity.ms",
+  "pixel.facebook.com",
+  "an.facebook.com",
+  "ads-twitter.com",
+  "analytics.tiktok.com",
+  "analytics.pinterest.com",
+  "snap.licdn.com",
+  "ads.linkedin.com",
+  "bat.bing.com",
+  "statcounter.com",
+  "histats.com",
+
+  // Vietnamese Ad Networks & Trackers
+  "eclick.vn",
+  "admicro.vn",
+  "vietad.vn",
+  "ambientdigitalgroup.com",
+  "innity.com",
+  "microad.vn",
+  "ants.vn",
+  "adtrue.com",
+  "blueseed.tv",
+  "novanet.vn",
+
+  // Aggressive Popup & Malware/Scam Networks
+  "exoclick.com",
+  "juicyads.com",
+  "trafficjunky.com",
+  "ero-advertising.com",
+  "clickadu.com",
+  "hilltopads.net",
+  "ad-maven.com",
+  "yllix.com",
+  "zeroredirect.com",
+  "adkeeper.com",
+  "adsterra.com",
+  "clicksor.com",
+  "cpalead.com",
+  "leadbolt.com",
+  "onclickads.net",
+  "onclickalgo.com",
+  "wigetmedia.com",
+  "realsrv.com",
+  "syndication.exoclick.com",
+
+  // Crypto Mining domains
+  "coinhive.com",
+  "coin-have.com",
+  "crypto-loot.com",
+  "jsecoin.com",
+  "authedmine.com",
+  "webminepool.com",
+  "monerominer.rocks"
+];
+
+// Phishing, Scam, Fake Bank, Lottery & Malware Domains
+const scamDomains = [
+  "vietcombank-online-banking.top",
+  "techcombank-verify.vip",
+  "mbbank-xacthuc.site",
+  "vneid-dinhdanh-gov.top",
+  "vneid-capnhat-dancu.xyz",
+  "facebook-security-checkpoints.com",
+  "meta-security-support.xyz",
+  "telegram-airdrop-claim.top",
+  "usdt-trc20-claim.vip",
+  "binance-security-verify.top",
+  "shopee-trungthuong-quatang.xyz",
+  "tiktok-kiemtien-online.top",
+  "congan-xuly-phatnguoi.top",
+  "toaan-trieutap-online.vip",
+  "windows-defender-security-alert.xyz",
+  "apple-security-id-locked.top",
+  "phishing-test-threat.example",
+  "scam-lottery-winner.online",
+  "fake-antivirus-scan.top",
+  "urgent-account-suspended.click"
+];
+
+// Known Malicious & Ad-serving IP addresses
+const adIps = [
+  "185.220.101.5",
+  "185.220.101.6",
+  "185.220.101.7",
+  "45.33.32.156",
+  "103.253.145.18",
+  "195.123.245.8",
+  "185.193.125.10",
+  "91.240.118.15",
+  "104.244.42.1",
+  "198.51.100.24",
+  "192.241.218.12",
+  "178.62.204.14",
+  "188.166.152.11",
+  "46.101.215.19",
+  "139.59.189.22",
+  "159.203.111.45",
+  "167.99.144.33",
+  "142.93.120.77",
+  "165.227.18.99",
+  "64.227.45.10"
+];
+
+// URL Keyword patterns for ad scripts/banners
+const adPatterns = [
+  "*://*/*ads.js*",
+  "*://*/*ad-server*",
+  "*://*/*adservice*",
+  "*://*/*popunder*",
+  "*://*/*banner-ads*",
+  "*://*/*track.gif*",
+  "*://*/*tracking-pixel*",
+  "*://*/*sponsor_banner*"
+];
+
+// Scam / Fake alert URL patterns
+const scamPatterns = [
+  "*://*/*urgent-security-alert*",
+  "*://*/*critical-virus-alert*",
+  "*://*/*call-support-tollfree*",
+  "*://*/*congratulations-winner-iphone*",
+  "*://*/*claim-airdrop-reward*"
+];
+
+const resourceTypes = [
+  "sub_frame",
+  "stylesheet",
+  "script",
+  "image",
+  "font",
+  "object",
+  "xmlhttprequest",
+  "ping",
+  "csp_report",
+  "media",
+  "websocket",
+  "other"
+];
+
+let ruleId = 1;
+const rules = [];
+
+// 1. Standard Domain block rules
+for (const domain of adDomains) {
+  rules.push({
+    id: ruleId++,
+    priority: 1,
+    action: { type: "block" },
+    condition: {
+      urlFilter: `||${domain}^`,
+      resourceTypes: resourceTypes
+    }
+  });
+}
+
+// 2. IP rules
+for (const ip of adIps) {
+  rules.push({
+    id: ruleId++,
+    priority: 2,
+    action: { type: "block" },
+    condition: {
+      urlFilter: `||${ip}^`,
+      resourceTypes: resourceTypes
+    }
+  });
+}
+
+// 3. Pattern rules
+for (const pat of adPatterns) {
+  rules.push({
+    id: ruleId++,
+    priority: 1,
+    action: { type: "block" },
+    condition: {
+      urlFilter: pat,
+      resourceTypes: ["script", "sub_frame", "xmlhttprequest", "image", "other"]
+    }
+  });
+}
+
+// 4. Scam Domains - Main frame redirects to Warning page, subresources blocked!
+for (const scam of scamDomains) {
+  // Main frame -> Redirect to Warning Interstitial
+  rules.push({
+    id: ruleId++,
+    priority: 20,
+    action: {
+      type: "redirect",
+      redirect: {
+        extensionPath: "/warning/warning.html"
+      }
+    },
+    condition: {
+      urlFilter: `||${scam}^`,
+      resourceTypes: ["main_frame"]
+    }
+  });
+
+  // Subresources -> Blocked immediately
+  rules.push({
+    id: ruleId++,
+    priority: 20,
+    action: { type: "block" },
+    condition: {
+      urlFilter: `||${scam}^`,
+      resourceTypes: resourceTypes
+    }
+  });
+}
+
+// 5. Scam Patterns
+for (const spat of scamPatterns) {
+  rules.push({
+    id: ruleId++,
+    priority: 15,
+    action: {
+      type: "redirect",
+      redirect: {
+        extensionPath: "/warning/warning.html"
+      }
+    },
+    condition: {
+      urlFilter: spat,
+      resourceTypes: ["main_frame"]
+    }
+  });
+}
+
+const rulesDir = path.join(__dirname, '..', 'rules');
+if (!fs.existsSync(rulesDir)) {
+  fs.mkdirSync(rulesDir, { recursive: true });
+}
+
+const outputPath = path.join(rulesDir, 'rules.json');
+fs.writeFileSync(outputPath, JSON.stringify(rules, null, 2), 'utf-8');
+console.log(`Generated ${rules.length} static rules to ${outputPath}`);
