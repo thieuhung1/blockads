@@ -367,6 +367,23 @@ for (const spat of scamPatterns) {
   });
 }
 
+// 8. Tầng đáy mạng HTTP: Tiêm header chống theo dõi (DNT & Sec-GPC)
+rules.push({
+  id: ruleId++,
+  priority: 1,
+  action: {
+    type: "modifyHeaders",
+    requestHeaders: [
+      { header: "DNT", operation: "set", value: "1" },
+      { header: "Sec-GPC", operation: "set", value: "1" }
+    ]
+  },
+  condition: {
+    urlFilter: "*",
+    resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "script", "image", "other"]
+  }
+});
+
 const rulesDir = path.join(__dirname, '..', 'rules');
 if (!fs.existsSync(rulesDir)) {
   fs.mkdirSync(rulesDir, { recursive: true });
