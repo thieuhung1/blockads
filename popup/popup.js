@@ -1,21 +1,25 @@
-// NetShield Popup Controller
+// NetShield Popup Controller with Anti-Scam Shield
 
 document.addEventListener('DOMContentLoaded', async () => {
   let currentTab = null;
   let currentHostname = '';
   let isMasterEnabled = true;
+  let isAntiScamEnabled = true;
 
   // DOM Elements
   const masterToggleBtn = document.getElementById('masterToggleBtn');
   const shieldContainer = document.getElementById('shieldContainer');
   const statusBadge = document.getElementById('statusBadge');
   const statusText = document.getElementById('statusText');
+  const antiScamToggleCheckbox = document.getElementById('antiScamToggleCheckbox');
+  const antiScamStatusText = document.getElementById('antiScamStatusText');
   const siteHostnameEl = document.getElementById('siteHostname');
   const siteFaviconEl = document.getElementById('siteFavicon');
   const siteProtectionLabel = document.getElementById('siteProtectionLabel');
   const siteToggleCheckbox = document.getElementById('siteToggleCheckbox');
   const tabBlockedCountEl = document.getElementById('tabBlockedCount');
   const totalBlockedCountEl = document.getElementById('totalBlockedCount');
+  const totalScamCountEl = document.getElementById('totalScamCount');
   const quickAddForm = document.getElementById('quickAddForm');
   const quickAddInput = document.getElementById('quickAddInput');
   const quickAddFeedback = document.getElementById('quickAddFeedback');
@@ -64,10 +68,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!response || !response.success) return;
 
       isMasterEnabled = response.enabled;
+      isAntiScamEnabled = response.antiScamEnabled;
       updateMasterUI(isMasterEnabled);
 
+      antiScamToggleCheckbox.checked = isAntiScamEnabled;
+      updateAntiScamUI(isAntiScamEnabled);
+
       // Whitelist check
-      const isWhitelisted = response.whitelist.some(w => 
+      const isWhitelisted = response.whitelist.some(w =>
         currentHostname && (currentHostname === w || currentHostname.endsWith('.' + w))
       );
 
@@ -77,6 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Counters
       tabBlockedCountEl.textContent = response.tabBlocked || 0;
       totalBlockedCountEl.textContent = (response.totalBlocked || 0).toLocaleString();
+      totalScamCountEl.textContent = (response.totalScamBlocked || 0).toLocaleString();
 
       // Recent blocked list
       renderRecentBlocked(response.recentBlocked || []);
@@ -94,6 +103,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       shieldContainer.classList.add('disabled');
       statusBadge.className = 'status-badge disabled';
       statusText.textContent = 'TẠM DỪNG';
+    }
+  }
+
+  function updateAntiScamUI(enabled) {
+    if (enabled) {
+      antiScamStatusText.textContent = 'Đang bảo vệ chống lừa đảo';
+      antiScamStatusText.style.color = '#fda4af';
+    } else {
+      antiScamStatusText.textContent = 'Đã tắt khiên lừa đảo';
+      antiScamStatusText.style.color = '#94a3b8';
     }
   }
 
@@ -118,12 +137,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const row = document.createElement('div');
       row.className = 'request-item';
 
-      const tagType = item.isIp ? 'ip' : 'domain';
-      const tagText = item.isIp ? 'IP' : 'AD';
+      let tagClass = item.isIp ? 'ip' : 'domain';
+      let tagText = item.isIp ? 'IP' : 'AD';
+
+      if (item.isScam) {
+        tagClass = 'scam';
+        tagText = 'LỪA ĐẢO';
+      }
 
       row.innerHTML = `
         <div class="req-left">
-          <span class="badge-tag ${tagType}">${tagText}</span>
+          <span class="badge-tag ${tagClass}">${tagText}</span>
           <span class="req-host" title="${escapeHtml(item.url)}">${escapeHtml(item.hostname)}</span>
         </div>
         <span class="badge-tag blocked">ĐÃ CHẶN</span>
@@ -164,7 +188,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         liveRequestsList.appendChild(row);
       });
 
-      // Bind mini block buttons
       document.querySelectorAll('.btn-mini-block').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const target = e.currentTarget.getAttribute('data-target');
@@ -181,7 +204,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 3. Event Listeners
-  // Master Switch
   masterToggleBtn.addEventListener('click', async () => {
     isMasterEnabled = !isMasterEnabled;
     updateMasterUI(isMasterEnabled);
@@ -192,7 +214,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshState();
   });
 
-  // Site Toggle
+  antiScamToggleCheckbox.addEventListener('change', async () => {
+    isAntiScamEnabled = antiScamToggleCheckbox.checked;
+    updateAntiScamUI(isAntiScamEnabled);
+    await chrome.runtime.sendMessage({
+      type: 'TOGGLE_ANTI_SCAM',
+      enabled: isAntiScamEnabled
+    });
+    await refreshState();
+  });
+
   siteToggleCheckbox.addEventListener('change', async () => {
     if (!currentHostname) return;
     const res = await chrome.runtime.sendMessage({
@@ -204,21 +235,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Quick Add Rule
   quickAddForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const val = quickAddInput.value.trim();
     if (!val) return;
 
     const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(val) || val.includes(':');
-    const success = await addCustomRule(val, isIp ? 'ip' : 'domain', 'Thêm thủ công từ Popup');
+    const isScam = val.includes('phish') || val.includes('scam') || val.includes('lua-dao') || val.includes('trungthuong');
+    const ruleType = isScam ? 'scam' : (isIp ? 'ip' : 'domain');
+
+    const success = await addCustomRule(val, ruleType, 'Thêm nhanh từ Popup');
 
     if (success) {
       quickAddInput.value = '';
-      showFeedback(`Đã kích hoạt chặn ${isIp ? 'IP' : 'Domain'}: ${val}`, 'success');
+      showFeedback(`Đã kích hoạt chặn: ${val}`, 'success');
       await refreshState();
     } else {
-      showFeedback('Không thể thêm quy tắc. Vui lòng kiểm tra lại!', 'error');
+      showFeedback('Không thể thêm quy tắc. Kiểm tra lại!', 'error');
     }
   });
 
@@ -244,7 +277,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 3000);
   }
 
-  // Tab Switching
   tabRecentBtn.addEventListener('click', () => {
     tabRecentBtn.classList.add('active');
     tabLiveBtn.classList.remove('active');
@@ -260,7 +292,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadLiveRequests();
   });
 
-  // Open Options / Dashboard
   function openOptions() {
     if (chrome.runtime.openOptionsPage) {
       chrome.runtime.openOptionsPage();
@@ -277,6 +308,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // Initial call
   await refreshState();
 });

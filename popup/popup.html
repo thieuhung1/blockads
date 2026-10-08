@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NetShield - Chặn Quảng Cáo & IP Mạng</title>
+  <title>NetShield - Chặn Quảng Cáo & Lừa Đảo</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -18,8 +18,8 @@
           </svg>
         </div>
         <div class="brand-text">
-          <h1 class="brand-title">NetShield</h1>
-          <span class="brand-subtitle">Chặn Quảng Cáo & IP Mạng</span>
+          <h1 class="brand-title">NetShield Pro</h1>
+          <span class="brand-subtitle">Chặn Ads, IP & Lừa Đảo</span>
         </div>
       </div>
       <button id="btnOpenOptions" class="icon-btn" title="Cài đặt & Bảng điều khiển">
@@ -49,6 +49,27 @@
       </div>
     </div>
 
+    <!-- Anti-Scam Feature Strip -->
+    <div class="anti-scam-strip glass-panel">
+      <div class="strip-left">
+        <div class="strip-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div class="strip-info">
+          <span class="strip-title">Khiên Chống Lừa Đảo</span>
+          <span class="strip-sub" id="antiScamStatusText">Cảnh báo Phishing & Fake Bank</span>
+        </div>
+      </div>
+      <label class="switch" title="Bật/Tắt bảo vệ lừa đảo">
+        <input type="checkbox" id="antiScamToggleCheckbox" checked>
+        <span class="slider slider-rose"></span>
+      </label>
+    </div>
+
     <!-- Current Site Card -->
     <div class="site-card glass-panel" id="siteCard">
       <div class="site-info">
@@ -66,28 +87,24 @@
       </label>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="stats-grid">
+    <!-- Stats Grid (3 Metrics) -->
+    <div class="stats-grid-three">
       <div class="stat-card glass-panel">
-        <div class="stat-header">
-          <span class="stat-label">Trang hiện tại</span>
-          <svg class="stat-icon cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
-        </div>
+        <div class="stat-label">Trang Này</div>
         <div class="stat-value text-cyan" id="tabBlockedCount">0</div>
-        <div class="stat-sub">Quảng cáo & IP bị chặn</div>
+        <div class="stat-sub">Quảng cáo & IP</div>
       </div>
 
       <div class="stat-card glass-panel">
-        <div class="stat-header">
-          <span class="stat-label">Tổng cộng</span>
-          <svg class="stat-icon indigo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-        </div>
+        <div class="stat-label">Tổng Chặn</div>
         <div class="stat-value text-indigo" id="totalBlockedCount">0</div>
-        <div class="stat-sub">Đã ngăn chặn từ trước</div>
+        <div class="stat-sub">Quảng cáo & Ads</div>
+      </div>
+
+      <div class="stat-card glass-panel">
+        <div class="stat-label">Lừa Đảo</div>
+        <div class="stat-value text-rose" id="totalScamCount">0</div>
+        <div class="stat-sub">Trang giả mạo</div>
       </div>
     </div>
 
@@ -100,13 +117,13 @@
           <line x1="6" y1="6" x2="6.01" y2="6"></line>
           <line x1="6" y1="18" x2="6.01" y2="18"></line>
         </svg>
-        <span>Chặn nhanh IP / Domain máy chủ</span>
+        <span>Chặn nhanh IP, Domain hoặc Lừa đảo</span>
       </div>
       <form id="quickAddForm" class="quick-add-form">
         <input 
           type="text" 
           id="quickAddInput" 
-          placeholder="Nhập IP (185.x.x.x) hoặc domain..." 
+          placeholder="Nhập IP (185.x) hoặc trang lừa đảo..." 
           required
           autocomplete="off"
         >
@@ -152,7 +169,7 @@
         </svg>
         <span>Mở Bảng Điều Khiển Chuyên Sâu</span>
       </button>
-      <div class="version-tag">NetShield v1.0 • Manifest V3 High-Speed</div>
+      <div class="version-tag">NetShield Pro • Chặn Ads, IP & Chống Lừa Đảo</div>
     </footer>
   </div>
 

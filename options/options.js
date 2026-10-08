@@ -1,10 +1,12 @@
-// NetShield Options & Dashboard Controller
+// NetShield Options & Dashboard Controller with Anti-Scam Shield
 
 document.addEventListener('DOMContentLoaded', async () => {
   let appState = {
     enabled: true,
+    antiScamEnabled: true,
     cosmeticFiltering: true,
     totalBlocked: 0,
+    totalScamBlocked: 0,
     customRules: [],
     whitelist: [],
     recentBlocked: []
@@ -19,10 +21,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Overview Elements
   const dashTotalBlocked = document.getElementById('dashTotalBlocked');
+  const dashScamCount = document.getElementById('dashScamCount');
   const dashIpRulesCount = document.getElementById('dashIpRulesCount');
-  const dashDomainRulesCount = document.getElementById('dashDomainRulesCount');
   const dashWhitelistCount = document.getElementById('dashWhitelistCount');
   const dashMasterToggle = document.getElementById('dashMasterToggle');
+  const dashAntiScamToggle = document.getElementById('dashAntiScamToggle');
   const dashCosmeticToggle = document.getElementById('dashCosmeticToggle');
   const btnResetStats = document.getElementById('btnResetStats');
 
@@ -92,16 +95,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Render Overview
   function renderOverview() {
     dashTotalBlocked.textContent = (appState.totalBlocked || 0).toLocaleString();
+    dashScamCount.textContent = (appState.totalScamBlocked || 0).toLocaleString();
 
     const rules = appState.customRules || [];
     const ipCount = rules.filter(r => r.type === 'ip').length;
-    const domainCount = rules.filter(r => r.type === 'domain' || r.type === 'pattern').length;
 
     dashIpRulesCount.textContent = ipCount;
-    dashDomainRulesCount.textContent = domainCount;
     dashWhitelistCount.textContent = (appState.whitelist || []).length;
 
     dashMasterToggle.checked = appState.enabled;
+    dashAntiScamToggle.checked = appState.antiScamEnabled !== false;
     dashCosmeticToggle.checked = appState.cosmeticFiltering;
   }
 
@@ -110,6 +113,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const val = dashMasterToggle.checked;
     await chrome.runtime.sendMessage({ type: 'TOGGLE_MASTER', enabled: val });
     appState.enabled = val;
+    renderOverview();
+  });
+
+  dashAntiScamToggle.addEventListener('change', async () => {
+    const val = dashAntiScamToggle.checked;
+    await chrome.runtime.sendMessage({ type: 'TOGGLE_ANTI_SCAM', enabled: val });
+    appState.antiScamEnabled = val;
     renderOverview();
   });
 
@@ -123,12 +133,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (confirm('Bạn có chắc muốn đặt lại toàn bộ số liệu thống kê về 0?')) {
       await chrome.runtime.sendMessage({ type: 'RESET_STATS' });
       appState.totalBlocked = 0;
+      appState.totalScamBlocked = 0;
       renderOverview();
     }
   });
 
   // 3. Rules Manager Logic
-  // Sub-tabs (Single vs Batch)
   tabSingleRule.addEventListener('click', () => {
     tabSingleRule.classList.add('active');
     tabBatchRule.classList.remove('active');
@@ -151,7 +161,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let type = ruleTypeSelect.value;
     if (type === 'auto') {
-      type = isTargetIp(target) ? 'ip' : 'domain';
+      if (isTargetIp(target)) {
+        type = 'ip';
+      } else if (target.includes('scam') || target.includes('phish') || target.includes('fake')) {
+        type = 'scam';
+      } else {
+        type = 'domain';
+      }
     }
 
     const note = ruleNoteInput.value.trim();
@@ -182,7 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let addedCount = 0;
 
     for (const line of lines) {
-      const type = isTargetIp(line) ? 'ip' : 'domain';
+      const type = isTargetIp(line) ? 'ip' : (line.includes('fake') || line.includes('scam') ? 'scam' : 'domain');
       const res = await chrome.runtime.sendMessage({
         type: 'ADD_CUSTOM_RULE',
         target: line,
@@ -218,11 +234,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const rules = appState.customRules || [];
 
     const filtered = rules.filter(r => {
-      // Type filter
       if (currentRuleFilter !== 'all' && r.type !== currentRuleFilter) {
         return false;
       }
-      // Search query
       if (searchQuery) {
         const matchTarget = r.target.toLowerCase().includes(searchQuery);
         const matchNote = (r.note || '').toLowerCase().includes(searchQuery);
@@ -245,8 +259,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     filtered.forEach(rule => {
       const tr = document.createElement('tr');
 
-      const tagClass = rule.type === 'ip' ? 'ip' : (rule.type === 'domain' ? 'domain' : 'pattern');
-      const tagLabel = rule.type === 'ip' ? 'IP MẠNG' : (rule.type === 'domain' ? 'DOMAIN' : 'PATTERN');
+      let tagClass = 'domain';
+      let tagLabel = 'DOMAIN';
+
+      if (rule.type === 'ip') {
+        tagClass = 'ip';
+        tagLabel = 'IP MẠNG';
+      } else if (rule.type === 'scam') {
+        tagClass = 'scam';
+        tagLabel = 'LỪA ĐẢO';
+      } else if (rule.type === 'pattern') {
+        tagClass = 'pattern';
+        tagLabel = 'PATTERN';
+      }
 
       tr.innerHTML = `
         <td><span class="tag-badge ${tagClass}">${tagLabel}</span></td>
@@ -271,7 +296,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       rulesTableBody.appendChild(tr);
     });
 
-    // Bind row action events
     document.querySelectorAll('.rule-toggle').forEach(input => {
       input.addEventListener('change', async (e) => {
         const id = parseInt(e.target.getAttribute('data-id'), 10);
@@ -466,7 +490,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (confirm('CẢNH BÁO: Thao tác này sẽ xóa mọi quy tắc tùy chỉnh và đưa extension về trạng thái ban đầu. Bạn có chắc không?')) {
       await chrome.runtime.sendMessage({ type: 'RESET_STATS' });
       await chrome.storage.local.clear();
-      // Reload page to reinitialize defaults
       window.location.reload();
     }
   });
@@ -491,6 +514,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // Load initial
   await loadState();
 });
