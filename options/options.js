@@ -5,11 +5,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     enabled: true,
     antiScamEnabled: true,
     antiTrackingEnabled: true,
+    ipAdShieldEnabled: true,
     webrtcProtectionEnabled: true,
     cosmeticFiltering: true,
     totalBlocked: 0,
     totalScamBlocked: 0,
     totalTrackingBlocked: 0,
+    totalIpBlocked: 0,
     customRules: [],
     whitelist: [],
     recentBlocked: []
@@ -26,11 +28,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const dashTotalBlocked = document.getElementById('dashTotalBlocked');
   const dashScamCount = document.getElementById('dashScamCount');
   const dashTrackingCount = document.getElementById('dashTrackingCount');
+  const dashTotalIpBlocked = document.getElementById('dashTotalIpBlocked');
   const dashIpRulesCount = document.getElementById('dashIpRulesCount');
   const dashWhitelistCount = document.getElementById('dashWhitelistCount');
   const dashMasterToggle = document.getElementById('dashMasterToggle');
   const dashAntiScamToggle = document.getElementById('dashAntiScamToggle');
   const dashAntiTrackingToggle = document.getElementById('dashAntiTrackingToggle');
+  const dashIpShieldToggle = document.getElementById('dashIpShieldToggle');
   const dashWebRTCToggle = document.getElementById('dashWebRTCToggle');
   const dashCosmeticToggle = document.getElementById('dashCosmeticToggle');
   const btnResetStats = document.getElementById('btnResetStats');
@@ -103,6 +107,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     dashTotalBlocked.textContent = (appState.totalBlocked || 0).toLocaleString();
     dashScamCount.textContent = (appState.totalScamBlocked || 0).toLocaleString();
     dashTrackingCount.textContent = (appState.totalTrackingBlocked || 0).toLocaleString();
+    if (dashTotalIpBlocked) {
+      dashTotalIpBlocked.textContent = (appState.totalIpBlocked || 0).toLocaleString();
+    }
 
     const rules = appState.customRules || [];
     const ipCount = rules.filter(r => r.type === 'ip').length;
@@ -113,6 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     dashMasterToggle.checked = appState.enabled;
     dashAntiScamToggle.checked = appState.antiScamEnabled !== false;
     dashAntiTrackingToggle.checked = appState.antiTrackingEnabled !== false;
+    if (dashIpShieldToggle) dashIpShieldToggle.checked = appState.ipAdShieldEnabled !== false;
     if (dashWebRTCToggle) dashWebRTCToggle.checked = appState.webrtcProtectionEnabled !== false;
     dashCosmeticToggle.checked = appState.cosmeticFiltering;
   }
@@ -124,6 +132,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     appState.enabled = val;
     renderOverview();
   });
+
+  if (dashIpShieldToggle) {
+    dashIpShieldToggle.addEventListener('change', async () => {
+      const val = dashIpShieldToggle.checked;
+      await chrome.runtime.sendMessage({ type: 'TOGGLE_IP_SHIELD', enabled: val });
+      appState.ipAdShieldEnabled = val;
+    });
+  }
 
   dashAntiScamToggle.addEventListener('change', async () => {
     const val = dashAntiScamToggle.checked;
@@ -159,6 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       appState.totalBlocked = 0;
       appState.totalScamBlocked = 0;
       appState.totalTrackingBlocked = 0;
+      appState.totalIpBlocked = 0;
       renderOverview();
     }
   });

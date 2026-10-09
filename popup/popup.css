@@ -311,6 +311,54 @@ body {
   max-width: 90px;
 }
 
+/* Deep Bottom-Layer IP Ad Shield Card */
+.feature-full-card {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feature-full-card.border-purple {
+  border-color: rgba(168, 85, 247, 0.3);
+  background: rgba(168, 85, 247, 0.06);
+}
+
+.f-icon-badge.purple {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: rgba(168, 85, 247, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c084fc;
+  flex-shrink: 0;
+}
+
+.f-icon-badge.purple svg {
+  width: 15px;
+  height: 15px;
+}
+
+.f-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-tag-purple {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  letter-spacing: 0.3px;
+}
+
 /* IP Stealth & WebRTC Shield Card */
 .ip-stealth-card {
   padding: 8px 12px;
@@ -498,19 +546,30 @@ input:checked + .slider.slider-emerald {
   background-color: var(--accent-emerald);
 }
 
+input:checked + .slider.slider-purple {
+  background-color: #a855f7;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+
 input:checked + .slider:before {
   transform: translateX(14px);
 }
 
-/* Stats Grid Four */
+/* Stats Grid Four & Five */
 .stats-grid-four {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 6px;
 }
 
+.stats-grid-five {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
 .stat-card {
-  padding: 8px 4px;
+  padding: 8px 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -519,27 +578,28 @@ input:checked + .slider:before {
 }
 
 .stat-label {
-  font-size: 9px;
+  font-size: 8.5px;
   color: var(--text-muted);
   text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   white-space: nowrap;
 }
 
 .stat-value {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.5px;
 }
 
 .text-cyan { color: var(--accent-cyan); text-shadow: 0 0 8px var(--accent-cyan-glow); }
 .text-indigo { color: #818cf8; text-shadow: 0 0 8px rgba(129, 140, 248, 0.3); }
+.text-purple { color: #c084fc; text-shadow: 0 0 8px rgba(192, 132, 252, 0.4); }
 .text-rose { color: #fb7185; text-shadow: 0 0 8px var(--accent-rose-glow); }
 .text-emerald { color: #34d399; text-shadow: 0 0 8px var(--accent-emerald-glow); }
 
 .stat-sub {
-  font-size: 8px;
+  font-size: 7.5px;
   color: var(--text-dim);
   white-space: nowrap;
 }
@@ -703,6 +763,11 @@ input:checked + .slider:before {
 .badge-tag.ip {
   background: rgba(245, 158, 11, 0.2);
   color: #fbbf24;
+}
+.badge-tag.ip-deep {
+  background: rgba(168, 85, 247, 0.25);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.4);
 }
 .badge-tag.domain {
   background: rgba(99, 102, 241, 0.2);

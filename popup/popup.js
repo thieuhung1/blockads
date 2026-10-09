@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let isMasterEnabled = true;
   let isAntiScamEnabled = true;
   let isAntiTrackingEnabled = true;
+  let isIpShieldEnabled = true;
 
   // DOM Elements
   const masterToggleBtn = document.getElementById('masterToggleBtn');
@@ -16,6 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const antiScamStatusText = document.getElementById('antiScamStatusText');
   const antiTrackingToggleCheckbox = document.getElementById('antiTrackingToggleCheckbox');
   const antiTrackingStatusText = document.getElementById('antiTrackingStatusText');
+  const ipShieldToggleCheckbox = document.getElementById('ipShieldToggleCheckbox');
+  const ipShieldStatusText = document.getElementById('ipShieldStatusText');
   const currentPublicIpEl = document.getElementById('currentPublicIp');
   const webrtcToggleCheckbox = document.getElementById('webrtcToggleCheckbox');
   const webrtcStatusLabel = document.getElementById('webrtcStatusLabel');
@@ -26,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const siteToggleCheckbox = document.getElementById('siteToggleCheckbox');
   const tabBlockedCountEl = document.getElementById('tabBlockedCount');
   const totalBlockedCountEl = document.getElementById('totalBlockedCount');
+  const totalIpCountEl = document.getElementById('totalIpCount');
   const totalScamCountEl = document.getElementById('totalScamCount');
   const totalTrackingCountEl = document.getElementById('totalTrackingCount');
   const quickAddForm = document.getElementById('quickAddForm');
@@ -78,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       isMasterEnabled = response.enabled;
       isAntiScamEnabled = response.antiScamEnabled;
       isAntiTrackingEnabled = response.antiTrackingEnabled;
+      isIpShieldEnabled = response.ipAdShieldEnabled !== false;
       updateMasterUI(isMasterEnabled);
 
       antiScamToggleCheckbox.checked = isAntiScamEnabled;
@@ -85,6 +90,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       antiTrackingToggleCheckbox.checked = isAntiTrackingEnabled;
       updateAntiTrackingUI(isAntiTrackingEnabled);
+
+      if (ipShieldToggleCheckbox) {
+        ipShieldToggleCheckbox.checked = isIpShieldEnabled;
+      }
+      updateIpShieldUI(isIpShieldEnabled);
 
       // WebRTC Protection
       const isWebRTCProtected = response.webrtcProtectionEnabled !== false;
@@ -102,6 +112,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Counters
       tabBlockedCountEl.textContent = response.tabBlocked || 0;
       totalBlockedCountEl.textContent = (response.totalBlocked || 0).toLocaleString();
+      if (totalIpCountEl) {
+        totalIpCountEl.textContent = (response.totalIpBlocked || 0).toLocaleString();
+      }
       totalScamCountEl.textContent = (response.totalScamBlocked || 0).toLocaleString();
       totalTrackingCountEl.textContent = (response.totalTrackingBlocked || 0).toLocaleString();
 
@@ -141,6 +154,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       antiTrackingStatusText.textContent = 'Đã tắt khiên';
       antiTrackingStatusText.style.color = '#94a3b8';
+    }
+  }
+
+  function updateIpShieldUI(enabled) {
+    if (!ipShieldStatusText) return;
+    if (enabled) {
+      ipShieldStatusText.textContent = 'Khóa sạch ads, socket & popunder từ IP';
+      ipShieldStatusText.style.color = '#d8b4fe';
+    } else {
+      ipShieldStatusText.textContent = 'Đã tắt khiên IP tầng đáy';
+      ipShieldStatusText.style.color = '#94a3b8';
     }
   }
 
@@ -190,8 +214,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const row = document.createElement('div');
       row.className = 'request-item';
 
-      let tagClass = item.isIp ? 'ip' : 'domain';
-      let tagText = item.isIp ? 'IP' : 'AD';
+      let tagClass = item.isIp ? 'ip-deep' : 'domain';
+      let tagText = item.isIp ? 'IP ĐÁY' : 'AD';
 
       if (item.isScam) {
         tagClass = 'scam';
@@ -199,6 +223,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (item.isTracker) {
         tagClass = 'tracker';
         tagText = 'THEO DÕI';
+      } else if (item.isIpBlocked || item.isIp) {
+        tagClass = 'ip-deep';
+        tagText = 'IP ĐÁY';
       }
 
       row.innerHTML = `
@@ -229,8 +256,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const row = document.createElement('div');
         row.className = 'request-item';
 
-        const tagClass = req.isIp ? 'ip' : 'domain';
-        const tagText = req.isIp ? 'IP' : 'HOST';
+        const tagClass = req.isIp ? 'ip-deep' : 'domain';
+        const tagText = req.isIp ? 'IP ĐÁY' : 'HOST';
 
         row.innerHTML = `
           <div class="req-left">
@@ -269,6 +296,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     await refreshState();
   });
+
+  if (ipShieldToggleCheckbox) {
+    ipShieldToggleCheckbox.addEventListener('change', async () => {
+      isIpShieldEnabled = ipShieldToggleCheckbox.checked;
+      updateIpShieldUI(isIpShieldEnabled);
+      await chrome.runtime.sendMessage({
+        type: 'TOGGLE_IP_SHIELD',
+        enabled: isIpShieldEnabled
+      });
+      await refreshState();
+    });
+  }
 
   antiScamToggleCheckbox.addEventListener('change', async () => {
     isAntiScamEnabled = antiScamToggleCheckbox.checked;

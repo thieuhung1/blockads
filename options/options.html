@@ -155,6 +155,22 @@
             </div>
           </div>
 
+          <div class="metric-card purple">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+              </svg>
+            </div>
+            <div class="metric-body">
+              <span class="metric-title">IP tầng đáy bị chặn</span>
+              <span class="metric-number" id="dashTotalIpBlocked">0</span>
+              <span class="metric-note">Khóa socket & ads từ IP</span>
+            </div>
+          </div>
+
           <div class="metric-card amber">
             <div class="metric-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -182,6 +198,17 @@
               <label class="switch">
                 <input type="checkbox" id="dashMasterToggle" checked>
                 <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Khiên chặn quảng cáo từ IP tầng đáy (Deep Bottom-Layer IP Ad Shield)</span>
+                <span class="setting-desc">Chặn trực tiếp các yêu cầu tải quảng cáo, mã theo dõi, bẫy click, iframe ngầm và kênh WebSocket được gọi thẳng từ địa chỉ IP máy chủ (C++ DeclarativeNetRequest Engine).</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="dashIpShieldToggle" checked>
+                <span class="slider slider-purple"></span>
               </label>
             </div>
 

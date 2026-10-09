@@ -3,11 +3,13 @@
 const DYNAMIC_RULE_START_ID = 10000;
 const WHITELIST_RULE_START_ID = 50000;
 const BYPASS_SCAM_START_ID = 80000;
+const IP_SHIELD_RULE_START_ID = 95000;
 
 // In-memory runtime state
 let isEnabled = true;
 let isAntiScamEnabled = true;
 let isAntiTrackingEnabled = true;
+let isIpAdShieldEnabled = true;
 let tabBlockStats = {}; // { tabId: count }
 let liveNetworkRequests = []; // Circular buffer of recent requests
 const MAX_LIVE_REQUESTS = 150;
@@ -56,11 +58,13 @@ async function initializeStorage() {
     'enabled',
     'antiScamEnabled',
     'antiTrackingEnabled',
+    'ipAdShieldEnabled',
     'webrtcProtectionEnabled',
     'cosmeticFiltering',
     'totalBlocked',
     'totalScamBlocked',
     'totalTrackingBlocked',
+    'totalIpBlocked',
     'lastBlockedScamUrl',
     'customRules',
     'whitelist',
@@ -73,11 +77,13 @@ async function initializeStorage() {
     enabled: data.enabled !== undefined ? data.enabled : true,
     antiScamEnabled: data.antiScamEnabled !== undefined ? data.antiScamEnabled : true,
     antiTrackingEnabled: data.antiTrackingEnabled !== undefined ? data.antiTrackingEnabled : true,
+    ipAdShieldEnabled: data.ipAdShieldEnabled !== undefined ? data.ipAdShieldEnabled : true,
     webrtcProtectionEnabled: data.webrtcProtectionEnabled !== undefined ? data.webrtcProtectionEnabled : true,
     cosmeticFiltering: data.cosmeticFiltering !== undefined ? data.cosmeticFiltering : true,
     totalBlocked: data.totalBlocked || 0,
     totalScamBlocked: data.totalScamBlocked || 0,
     totalTrackingBlocked: data.totalTrackingBlocked || 0,
+    totalIpBlocked: data.totalIpBlocked || 0,
     lastBlockedScamUrl: data.lastBlockedScamUrl || '',
     customRules: data.customRules || [
       {
@@ -131,6 +137,7 @@ async function initializeStorage() {
   isEnabled = defaults.enabled;
   isAntiScamEnabled = defaults.antiScamEnabled;
   isAntiTrackingEnabled = defaults.antiTrackingEnabled;
+  isIpAdShieldEnabled = defaults.ipAdShieldEnabled;
 }
 
 // Synchronize storage configuration with DeclarativeNetRequest dynamic rules
@@ -139,6 +146,7 @@ async function syncRulesWithStorage() {
     enabled,
     antiScamEnabled,
     antiTrackingEnabled,
+    ipAdShieldEnabled,
     customRules,
     whitelist,
     temporaryBypassDomains
@@ -146,6 +154,7 @@ async function syncRulesWithStorage() {
     'enabled',
     'antiScamEnabled',
     'antiTrackingEnabled',
+    'ipAdShieldEnabled',
     'customRules',
     'whitelist',
     'temporaryBypassDomains'
@@ -154,6 +163,7 @@ async function syncRulesWithStorage() {
   isEnabled = enabled !== false;
   isAntiScamEnabled = antiScamEnabled !== false;
   isAntiTrackingEnabled = antiTrackingEnabled !== false;
+  isIpAdShieldEnabled = ipAdShieldEnabled !== false;
 
   // 1. Enable/Disable static ruleset
   try {
@@ -296,6 +306,75 @@ async function syncRulesWithStorage() {
     }
   }
 
+  // Tầng Đáy Mạng: Chặn quảng cáo, socket, popunder từ direct IP
+  if (isIpAdShieldEnabled) {
+    const ipShieldRules = [
+      {
+        id: 95001,
+        priority: 30,
+        action: { type: 'block' },
+        condition: {
+          regexFilter: '^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+.*(ad|banner|popup|popunder)',
+          resourceTypes: ['sub_frame', 'script', 'websocket', 'xmlhttprequest', 'ping', 'image', 'other']
+        }
+      },
+      {
+        id: 95002,
+        priority: 30,
+        action: { type: 'block' },
+        condition: {
+          regexFilter: '^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+.*(track|pixel|stat|counter)',
+          resourceTypes: ['sub_frame', 'script', 'websocket', 'xmlhttprequest', 'ping', 'image', 'other']
+        }
+      },
+      {
+        id: 95003,
+        priority: 30,
+        action: { type: 'block' },
+        condition: {
+          regexFilter: '^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+.*(click|affiliate|bid|jump|promo)',
+          resourceTypes: ['sub_frame', 'script', 'websocket', 'xmlhttprequest', 'ping', 'image', 'other']
+        }
+      },
+      {
+        id: 95004,
+        priority: 30,
+        action: { type: 'block' },
+        condition: {
+          regexFilter: '^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+.*(direct|ws|sock)',
+          resourceTypes: ['sub_frame', 'script', 'websocket', 'xmlhttprequest', 'ping', 'image', 'other']
+        }
+      },
+      {
+        id: 95005,
+        priority: 25,
+        action: { type: 'block' },
+        condition: {
+          regexFilter: '^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+',
+          resourceTypes: ['sub_frame', 'websocket'],
+          excludedInitiatorDomains: ['localhost', '127.0.0.1']
+        }
+      }
+    ];
+
+    for (const r of ipShieldRules) {
+      if (typeof chrome.declarativeNetRequest.isRegexSupported === 'function') {
+        try {
+          const check = await chrome.declarativeNetRequest.isRegexSupported({
+            regex: r.condition.regexFilter
+          });
+          if (check && !check.isSupported) {
+            console.warn(`[NetShield] Bỏ qua quy tắc IP ${r.id} do Chrome báo không hỗ trợ (${check.reason})`);
+            continue;
+          }
+        } catch {
+          // Bỏ qua nếu môi trường không hỗ trợ isRegexSupported
+        }
+      }
+      addRules.push(r);
+    }
+  }
+
   try {
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: removeRuleIds,
@@ -380,11 +459,13 @@ async function recordBlockedRequest(url, type, tabId, ruleId, isScam) {
     totalBlocked,
     totalScamBlocked,
     totalTrackingBlocked,
+    totalIpBlocked,
     recentBlocked
   } = await chrome.storage.local.get([
     'totalBlocked',
     'totalScamBlocked',
     'totalTrackingBlocked',
+    'totalIpBlocked',
     'recentBlocked'
   ]);
 
@@ -393,22 +474,25 @@ async function recordBlockedRequest(url, type, tabId, ruleId, isScam) {
   try {
     const u = new URL(url);
     hostname = u.hostname;
-    isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname);
+    isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
   } catch {
     hostname = url.substring(0, 40);
   }
 
   const isTracker = isTrackerThreat(url, hostname);
+  const isDirectIpBlock = isIp || (ruleId >= 95001 && ruleId <= 95010) || (ruleId >= 304 && ruleId <= 308);
 
   const newTotal = (totalBlocked || 0) + 1;
   const newScamTotal = isScam ? (totalScamBlocked || 0) + 1 : (totalScamBlocked || 0);
   const newTrackingTotal = isTracker ? (totalTrackingBlocked || 0) + 1 : (totalTrackingBlocked || 0);
+  const newIpTotal = isDirectIpBlock ? (totalIpBlocked || 0) + 1 : (totalIpBlocked || 0);
 
   const blockRecord = {
     id: Date.now() + Math.random().toString(36).substr(2, 4),
     url: url,
     hostname: hostname,
     isIp: isIp,
+    isIpBlocked: isDirectIpBlock,
     isScam: isScam || false,
     isTracker: isTracker,
     type: type || 'other',
@@ -426,6 +510,7 @@ async function recordBlockedRequest(url, type, tabId, ruleId, isScam) {
     totalBlocked: newTotal,
     totalScamBlocked: newScamTotal,
     totalTrackingBlocked: newTrackingTotal,
+    totalIpBlocked: newIpTotal,
     recentBlocked: list
   };
 
@@ -437,7 +522,7 @@ async function recordBlockedRequest(url, type, tabId, ruleId, isScam) {
 
   const liveMatch = liveNetworkRequests.find(r => r.url === url);
   if (liveMatch) {
-    liveMatch.status = isScam ? 'scam_blocked' : (isTracker ? 'tracker_blocked' : 'blocked');
+    liveMatch.status = isScam ? 'scam_blocked' : (isTracker ? 'tracker_blocked' : (isDirectIpBlock ? 'ip_blocked' : 'blocked'));
   }
 }
 
@@ -490,11 +575,13 @@ async function handleMessage(message, sender) {
         'enabled',
         'antiScamEnabled',
         'antiTrackingEnabled',
+        'ipAdShieldEnabled',
         'webrtcProtectionEnabled',
         'cosmeticFiltering',
         'totalBlocked',
         'totalScamBlocked',
         'totalTrackingBlocked',
+        'totalIpBlocked',
         'customRules',
         'whitelist',
         'recentBlocked'
@@ -508,11 +595,13 @@ async function handleMessage(message, sender) {
         enabled: data.enabled !== false,
         antiScamEnabled: data.antiScamEnabled !== false,
         antiTrackingEnabled: data.antiTrackingEnabled !== false,
+        ipAdShieldEnabled: data.ipAdShieldEnabled !== false,
         webrtcProtectionEnabled: data.webrtcProtectionEnabled !== false,
         cosmeticFiltering: data.cosmeticFiltering !== false,
         totalBlocked: data.totalBlocked || 0,
         totalScamBlocked: data.totalScamBlocked || 0,
         totalTrackingBlocked: data.totalTrackingBlocked || 0,
+        totalIpBlocked: data.totalIpBlocked || 0,
         tabBlocked: tabBlocked,
         customRules: data.customRules || [],
         whitelist: data.whitelist || [],
@@ -527,6 +616,13 @@ async function handleMessage(message, sender) {
       await syncRulesWithStorage();
       await updateBadgeForAllTabs();
       return { success: true, enabled: isEnabled };
+    }
+
+    case 'TOGGLE_IP_SHIELD': {
+      isIpAdShieldEnabled = message.enabled;
+      await chrome.storage.local.set({ ipAdShieldEnabled: isIpAdShieldEnabled });
+      await syncRulesWithStorage();
+      return { success: true, ipAdShieldEnabled: isIpAdShieldEnabled };
     }
 
     case 'TOGGLE_ANTI_SCAM': {
@@ -670,6 +766,7 @@ async function handleMessage(message, sender) {
         totalBlocked: 0,
         totalScamBlocked: 0,
         totalTrackingBlocked: 0,
+        totalIpBlocked: 0,
         recentBlocked: []
       });
       tabBlockStats = {};
@@ -683,6 +780,7 @@ async function handleMessage(message, sender) {
         'whitelist',
         'antiScamEnabled',
         'antiTrackingEnabled',
+        'ipAdShieldEnabled',
         'cosmeticFiltering'
       ]);
       return { success: true, config: data };
@@ -716,6 +814,7 @@ async function handleMessage(message, sender) {
 
       if (typeof config.antiScamEnabled === 'boolean') toSet.antiScamEnabled = config.antiScamEnabled;
       if (typeof config.antiTrackingEnabled === 'boolean') toSet.antiTrackingEnabled = config.antiTrackingEnabled;
+      if (typeof config.ipAdShieldEnabled === 'boolean') toSet.ipAdShieldEnabled = config.ipAdShieldEnabled;
       if (typeof config.cosmeticFiltering === 'boolean') toSet.cosmeticFiltering = config.cosmeticFiltering;
 
       await chrome.storage.local.set(toSet);

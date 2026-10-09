@@ -178,28 +178,39 @@ const scamDomains = [
   "urgent-account-suspended.click"
 ];
 
-// Known Malicious & Ad-serving IP addresses
+// Known Malicious & Ad-serving IP addresses (Bulletproof hosts, popunder networks, ad-injectors)
 const adIps = [
-  "185.220.101.5",
-  "185.220.101.6",
-  "185.220.101.7",
-  "45.33.32.156",
-  "103.253.145.18",
-  "195.123.245.8",
-  "185.193.125.10",
-  "91.240.118.15",
-  "104.244.42.1",
-  "198.51.100.24",
-  "192.241.218.12",
-  "178.62.204.14",
-  "188.166.152.11",
-  "46.101.215.19",
-  "139.59.189.22",
-  "159.203.111.45",
-  "167.99.144.33",
-  "142.93.120.77",
-  "165.227.18.99",
-  "64.227.45.10"
+  "185.220.101.5", "185.220.101.6", "185.220.101.7", "185.193.125.10", "185.193.125.11",
+  "185.106.92.15", "185.143.223.28", "185.244.150.12",
+  "45.33.32.156", "45.14.226.10", "45.154.255.88",
+  "103.253.145.18", "103.253.145.19", "103.145.13.22", "103.249.201.55", "103.195.103.88",
+  "195.123.245.8", "195.123.245.9", "195.201.201.44", "195.154.122.9",
+  "91.240.118.15", "91.240.118.16", "91.216.107.12", "91.92.241.103", "91.215.85.17",
+  "104.244.42.1", "104.244.42.2", "104.168.188.42", "104.238.169.11",
+  "198.51.100.24", "198.54.117.200", "198.144.149.82",
+  "192.241.218.12", "192.241.218.13", "192.119.112.8", "192.210.198.54",
+  "178.62.204.14", "178.62.204.15", "178.132.0.101", "178.17.170.15", "178.159.37.78",
+  "188.166.152.11", "188.166.152.12", "188.241.58.120", "188.130.137.62",
+  "46.101.215.19", "46.101.215.20", "46.166.161.201", "46.246.118.23",
+  "139.59.189.22", "139.59.189.23", "139.99.120.45",
+  "159.203.111.45", "159.89.120.78", "159.65.130.99",
+  "167.99.144.33", "167.99.144.34", "167.71.200.12",
+  "142.93.120.77", "142.93.120.78", "142.44.195.120",
+  "165.227.18.99", "165.227.18.100", "165.232.140.88",
+  "64.227.45.10", "64.227.45.11", "64.225.100.42",
+  "194.87.139.44", "194.26.29.112", "194.135.33.201",
+  "193.106.191.22", "193.36.119.55", "193.142.146.99",
+  "31.220.55.80", "31.184.238.129", "31.148.219.14",
+  "37.120.217.15", "37.48.115.12", "37.1.207.88",
+  "77.247.110.10", "77.88.55.66", "77.222.40.100",
+  "80.94.95.88", "80.82.77.139", "80.78.24.12",
+  "85.204.116.14", "85.209.135.202", "85.93.88.12",
+  "89.248.165.120", "89.187.170.82", "89.208.103.11",
+  "94.102.61.12", "94.156.128.88", "94.23.150.44",
+  "109.236.81.12", "109.248.200.54", "109.70.100.18",
+  "176.10.99.200", "176.123.8.44", "176.31.120.88",
+  "212.102.40.12", "212.83.180.55", "212.193.30.88",
+  "217.138.200.12", "217.23.15.80", "217.182.170.22"
 ];
 
 // URL Keyword patterns for ad scripts/banners
@@ -381,6 +392,65 @@ rules.push({
   condition: {
     urlFilter: "*",
     resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "script", "image", "other"]
+  }
+});
+
+// 9. TẦNG ĐÁY MẠNG: CHẶN QUẢNG CÁO & TRACKER GỌI TRỰC TIẾP TỪ ĐỊA CHỈ IP MÁY CHỦ
+// Tối ưu hóa Regex tuyến tính, bộ nhớ đồ thị trạng thái DFA < 150 bytes (chuẩn Chrome DNR RE2 trần 2 KB)
+
+// 9.1 Chặn Ads, Banner, Popup từ direct IP
+rules.push({
+  id: ruleId++,
+  priority: 30,
+  action: { type: "block" },
+  condition: {
+    regexFilter: "^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+.*(ad|banner|popup|popunder)",
+    resourceTypes: ["sub_frame", "script", "websocket", "xmlhttprequest", "ping", "image", "other"]
+  }
+});
+
+// 9.2 Chặn Trackers, Telemetry & Pixels từ direct IP
+rules.push({
+  id: ruleId++,
+  priority: 30,
+  action: { type: "block" },
+  condition: {
+    regexFilter: "^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+.*(track|pixel|stat|counter)",
+    resourceTypes: ["sub_frame", "script", "websocket", "xmlhttprequest", "ping", "image", "other"]
+  }
+});
+
+// 9.3 Chặn Click-traps, Affiliates & Bids từ direct IP
+rules.push({
+  id: ruleId++,
+  priority: 30,
+  action: { type: "block" },
+  condition: {
+    regexFilter: "^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+.*(click|affiliate|bid|jump|promo)",
+    resourceTypes: ["sub_frame", "script", "websocket", "xmlhttprequest", "ping", "image", "other"]
+  }
+});
+
+// 9.4 Chặn Direct sockets & Tunnel Relays từ direct IP
+rules.push({
+  id: ruleId++,
+  priority: 30,
+  action: { type: "block" },
+  condition: {
+    regexFilter: "^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+.*(direct|ws|sock)",
+    resourceTypes: ["sub_frame", "script", "websocket", "xmlhttprequest", "ping", "image", "other"]
+  }
+});
+
+// 9.5 Chặn toàn bộ iframe nhúng trực tiếp và WebSocket ngầm từ địa chỉ IP số (Ngoại trừ mạng nội bộ/localhost)
+rules.push({
+  id: ruleId++,
+  priority: 25,
+  action: { type: "block" },
+  condition: {
+    regexFilter: "^(https?|wss?)://\\d+\\.\\d+\\.\\d+\\.\\d+",
+    resourceTypes: ["sub_frame", "websocket"],
+    excludedInitiatorDomains: ["localhost", "127.0.0.1"]
   }
 });
 

@@ -271,6 +271,10 @@ body {
   background: rgba(245, 158, 11, 0.12);
   color: var(--accent-amber);
 }
+.metric-card.purple .metric-icon {
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+}
 
 .metric-body {
   display: flex;
@@ -295,6 +299,7 @@ body {
 .metric-card.indigo .metric-number { color: var(--accent-indigo); }
 .metric-card.rose .metric-number { color: var(--accent-rose); }
 .metric-card.amber .metric-number { color: var(--accent-amber); }
+.metric-card.purple .metric-number { color: #c084fc; }
 
 .metric-note {
   font-size: 11px;
@@ -406,6 +411,10 @@ input:checked + .slider.slider-rose {
 
 input:checked + .slider.slider-emerald {
   background-color: var(--accent-emerald);
+}
+
+input:checked + .slider.slider-purple {
+  background-color: #a855f7;
 }
 
 input:checked + .slider:before {

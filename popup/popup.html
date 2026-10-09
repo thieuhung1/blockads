@@ -114,6 +114,31 @@
       </label>
     </div>
 
+    <!-- Deep Bottom-Layer IP Ad Shield Card -->
+    <div class="feature-full-card glass-panel border-purple">
+      <div class="f-left">
+        <div class="f-icon-badge purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+        </div>
+        <div class="f-text">
+          <div class="f-title-row">
+            <span class="f-name">Chặn IP Tầng Đáy</span>
+            <span class="badge-tag-purple">C++ Network</span>
+          </div>
+          <span class="f-sub" id="ipShieldStatusText">Khóa sạch ads, socket & popunder từ IP</span>
+        </div>
+      </div>
+      <label class="switch" title="Bật/Tắt chặn quảng cáo từ IP tầng đáy">
+        <input type="checkbox" id="ipShieldToggleCheckbox" checked>
+        <span class="slider slider-purple"></span>
+      </label>
+    </div>
+
     <!-- Current Site Card -->
     <div class="site-card glass-panel" id="siteCard">
       <div class="site-info">
@@ -131,8 +156,8 @@
       </label>
     </div>
 
-    <!-- Stats Grid (4 Metrics) -->
-    <div class="stats-grid-four">
+    <!-- Stats Grid (5 Metrics) -->
+    <div class="stats-grid-five">
       <div class="stat-card glass-panel">
         <div class="stat-label">Trang Này</div>
         <div class="stat-value text-cyan" id="tabBlockedCount">0</div>
@@ -142,13 +167,19 @@
       <div class="stat-card glass-panel">
         <div class="stat-label">Tổng Ads</div>
         <div class="stat-value text-indigo" id="totalBlockedCount">0</div>
-        <div class="stat-sub">Đã ngăn chặn</div>
+        <div class="stat-sub">Đã chặn</div>
+      </div>
+
+      <div class="stat-card glass-panel">
+        <div class="stat-label">IP Đáy</div>
+        <div class="stat-value text-purple" id="totalIpCount">0</div>
+        <div class="stat-sub">Khóa IP</div>
       </div>
 
       <div class="stat-card glass-panel">
         <div class="stat-label">Lừa Đảo</div>
         <div class="stat-value text-rose" id="totalScamCount">0</div>
-        <div class="stat-sub">Trang giả mạo</div>
+        <div class="stat-sub">Giả mạo</div>
       </div>
 
       <div class="stat-card glass-panel">

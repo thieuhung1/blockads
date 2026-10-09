@@ -356,6 +356,29 @@
     }
   }
 
+  function isPublicIpAdUrl(urlStr) {
+    try {
+      const u = new URL(urlStr);
+      const host = u.hostname;
+      // Kiểm tra định dạng IPv4
+      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) {
+        // Loại trừ localhost & dải IP riêng tư (Private IP)
+        if (
+          host === '127.0.0.1' ||
+          host.startsWith('192.168.') ||
+          host.startsWith('10.') ||
+          /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+        ) {
+          return false;
+        }
+        // Kiểm tra từ khóa quảng cáo / popunder / affiliate
+        const full = (u.pathname + u.search + u.hash).toLowerCase();
+        return /ad|banner|popup|popunder|click|affiliate|track|pixel|jump|bid/i.test(full);
+      }
+    } catch {}
+    return false;
+  }
+
   function handleScamClickTrap(e) {
     const target = e.target.closest('a');
     if (!target || !target.href) return;
@@ -368,11 +391,12 @@
       href.includes('dinhdanh-gov') ||
       href.includes('vietcombank-online')
     );
+    const isDirectIpAd = isPublicIpAdUrl(target.href);
 
-    if (isSuspicious) {
+    if (isSuspicious || isDirectIpAd) {
       e.preventDefault();
       e.stopPropagation();
-      alert('🛡️ NetShield đã chặn một liên kết lừa đảo vừa kích hoạt!');
+      console.warn('[NetShield] Đã ngăn chặn click-trap/popunder dẫn tới IP hoặc liên kết độc hại:', target.href);
     }
   }
 
