@@ -120,45 +120,72 @@ export async function doSyncDynamicRules(S) {
     }
   }
 
-  // --- YouTube anti-adblock mitigation (Priority 900) ---
-  // Cho phép endpoint kiểm tra adblock + stream video → tránh màn hình đen
+  // --- YouTube playback shield (Priority 1000) ---
+  // Edge + DNR dễ chặn kép → allow mạnh stream & endpoint kiểm tra ad
+  // để player không bị xoay vòng / màn đen
+  const YT_ALL = [
+    'main_frame', 'sub_frame', 'stylesheet', 'script', 'image', 'font',
+    'object', 'xmlhttprequest', 'ping', 'media', 'websocket', 'other'
+  ];
   rules.push(
+    // 1) Stream video (quan trọng nhất)
     {
-      priority: 900,
-      action: { type: 'allow' },
-      condition: {
-        regexFilter: '^https?://googleads\\.g\\.doubleclick\\.net/',
-        resourceTypes: ['xmlhttprequest', 'ping', 'other', 'script', 'image']
-      }
-    },
-    {
-      priority: 900,
-      action: { type: 'allow' },
-      condition: {
-        regexFilter: '^https?://static\\.doubleclick\\.net/',
-        resourceTypes: ['script', 'xmlhttprequest', 'other']
-      }
-    },
-    {
-      priority: 900,
+      priority: 1000,
       action: { type: 'allow' },
       condition: {
         requestDomains: ['googlevideo.com'],
-        resourceTypes: ['media', 'xmlhttprequest', 'other', 'websocket']
+        resourceTypes: YT_ALL
       }
     },
+    // 2) Ảnh / thumbnail / player assets
     {
-      priority: 900,
+      priority: 1000,
       action: { type: 'allow' },
       condition: {
-        requestDomains: ['ytimg.com', 'ggpht.com'],
-        resourceTypes: ['image', 'media', 'xmlhttprequest', 'other']
+        requestDomains: ['ytimg.com', 'ggpht.com', 'yt3.ggpht.com'],
+        resourceTypes: YT_ALL
+      }
+    },
+    // 3) Mọi request do YouTube khởi tạo tới doubleclick/googleads (anti-adblock check)
+    {
+      priority: 1000,
+      action: { type: 'allow' },
+      condition: {
+        initiatorDomains: ['youtube.com', 'youtu.be', 'youtube-nocookie.com'],
+        requestDomains: [
+          'doubleclick.net', 'googleads.g.doubleclick.net', 'static.doubleclick.net',
+          'googleadservices.com', 'googlesyndication.com', 'pagead2.googlesyndication.com'
+        ],
+        resourceTypes: YT_ALL
+      }
+    },
+    // 4) Fallback regex doubleclick (khi Edge resolve domain khác)
+    {
+      priority: 1000,
+      action: { type: 'allow' },
+      condition: {
+        regexFilter: '^https?://([^/]+\\.)?(googleads\\.g\\.)?doubleclick\\.net/',
+        resourceTypes: YT_ALL
+      }
+    },
+    // 5) youtubei player API (không chặn nhầm)
+    {
+      priority: 1000,
+      action: { type: 'allow' },
+      condition: {
+        regexFilter: '^https?://([^/]+\\.)?youtube\\.com/youtubei/v1/player',
+        resourceTypes: ['xmlhttprequest', 'other']
       }
     }
   );
 
   // --- IP Ad Shield: 8 nhóm regex CỰC NHỎ (mỗi nhóm ~15 DFA state) ---
+  // Loại trừ initiator YouTube/Google để không chặn stream googlevideo qua IP
   if (S.ipAdShieldEnabled) {
+    const ytSafeInitiators = [
+      'youtube.com', 'youtu.be', 'googlevideo.com', 'ytimg.com',
+      'ggpht.com', 'google.com', 'googleapis.com', 'gstatic.com'
+    ];
     const adGroups = [
       'ads?|banner',
       'popup|popunder',
@@ -175,19 +202,20 @@ export async function doSyncDynamicRules(S) {
         action: { type: 'block' },
         condition: {
           regexFilter: '^https?://[0-9.]+[:/].*(?:' + group + ')',
-          resourceTypes: ['sub_frame', 'script', 'websocket', 'xmlhttprequest', 'ping', 'image', 'other']
+          resourceTypes: ['sub_frame', 'script', 'websocket', 'xmlhttprequest', 'ping', 'image', 'other'],
+          excludedInitiatorDomains: ytSafeInitiators
         }
       });
     }
 
-    // Bare IPv4 (đơn giản)
+    // Bare IPv4 — không chặn media, không chặn khi trang gốc là YouTube
     rules.push({
       priority: 25,
       action: { type: 'block' },
       condition: {
         regexFilter: '^https?://[0-9.]+(?:[/?#]|$)',
         resourceTypes: ['sub_frame', 'websocket'],
-        excludedInitiatorDomains: ['localhost', '127.0.0.1']
+        excludedInitiatorDomains: ['localhost', '127.0.0.1', ...ytSafeInitiators]
       }
     });
   }
