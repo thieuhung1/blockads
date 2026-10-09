@@ -66,12 +66,8 @@
   }
 
   function injectMainWorldScript() {
-    try {
-      const script = document.createElement('script');
-      script.src = chrome.runtime.getURL('content/yt_main_world.js');
-      script.onload = () => script.remove();
-      (document.head || document.documentElement).appendChild(script);
-    } catch (e) {}
+    // Manifest đã inject yt_main_world.js ở MAIN world (document_start).
+    // Không inject thêm qua script tag để tránh chạy 2 lần / path sai.
   }
 
   // =========================================================================
@@ -81,53 +77,64 @@
     let adFastForwardActive = false;
     let userMutedState = false;
 
-    // Fast polling loop for YouTube video & UI states
+    // Poll nhẹ hơn – tránh đụng video chính
     setInterval(() => {
       handleYouTubeVideoAds();
       handleYouTubeShortsAds();
       handleYouTubeAntiAdblockPopup();
       dismissYouTubeBannerAds();
       cleanYouTubeFeedAds();
-    }, 80);
+    }, 150);
 
-    // B. Fast forward & skip video ads instantly
+    // B. Skip quảng cáo an toàn – chỉ khi chắc chắn đang ad
     function handleYouTubeVideoAds() {
       const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
-      const video = document.querySelector('video.html5-main-video') || document.querySelector('video');
+      const video = document.querySelector('video.html5-main-video') || document.querySelector('#movie_player video');
 
       if (!player || !video) return;
 
-      const isAdShowing = player.classList.contains('ad-showing') ||
-                          player.classList.contains('ad-interrupting') ||
-                          !!document.querySelector('.ytp-ad-player-overlay') ||
-                          !!document.querySelector('.ytp-ad-player-overlay-layout') ||
-                          !!document.querySelector('.ytp-ad-module > *') ||
-                          !!document.querySelector('.ytp-ad-text') ||
-                          !!document.querySelector('.ytp-ad-preview-text');
+      const hasAdClass =
+        player.classList.contains('ad-showing') ||
+        player.classList.contains('ad-interrupting');
+
+      const hasOverlay =
+        !!document.querySelector('.ytp-ad-player-overlay:not([style*="display: none"])') ||
+        !!document.querySelector('.ytp-ad-player-overlay-layout') ||
+        !!document.querySelector('.ytp-ad-text') ||
+        !!document.querySelector('.ytp-ad-preview-text') ||
+        !!document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
+
+      let adState = 0;
+      try {
+        if (typeof player.getAdState === 'function') adState = player.getAdState();
+      } catch {}
+
+      // Chỉ coi là ad khi có class + overlay, hoặc API báo ad
+      const isAdShowing = (hasAdClass && hasOverlay) || adState > 0;
 
       if (isAdShowing) {
         if (!adFastForwardActive) {
           adFastForwardActive = true;
           userMutedState = video.muted;
-          video.muted = true; // Tắt tiếng ngay lập tức
+          try { video.muted = true; } catch {}
         }
 
-        // Tăng tốc độ phát quảng cáo lên 16x
         try {
-          video.playbackRate = 16.0;
+          if (video.playbackRate < 8) video.playbackRate = 16;
         } catch {}
 
-        // Tua thẳng về cuối quảng cáo
-        if (Number.isFinite(video.duration) && video.duration > 0) {
-          video.currentTime = video.duration || 999999;
-        }
+        // Chỉ seek khi duration ngắn (quảng cáo), tránh tua nhầm video dài
+        try {
+          const d = video.duration;
+          if (Number.isFinite(d) && d > 0 && d < 120) {
+            video.currentTime = d;
+          }
+        } catch {}
 
-        // Đảm bảo video không bị YouTube dừng hình (unpause)
         if (video.paused) {
           video.play().catch(() => {});
         }
 
-        // Bấm nút bỏ qua (Skip button) với đầy đủ chuỗi sự kiện chuột
         const skipButtons = [
           '.ytp-ad-skip-button',
           '.ytp-ad-skip-button-modern',
@@ -135,27 +142,26 @@
           '.ytp-ad-skip-button-slot button',
           '.ytp-ad-preview-container button',
           '.ytp-ad-skip-button-container button',
-          'button.ytp-ad-skip-button-modern',
-          '.ytp-ad-skip-button-text',
-          '.ytp-ad-survey-answer-button'
+          'button.ytp-ad-skip-button-modern'
         ];
 
         for (const selector of skipButtons) {
           const btn = document.querySelector(selector);
-          if (btn) {
-            ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach(evt => {
-              btn.dispatchEvent(new MouseEvent(evt, { bubbles: true, cancelable: true, view: window }));
-            });
+          if (btn && btn.offsetParent !== null) {
+            try { btn.click(); } catch {
+              ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach(evt => {
+                btn.dispatchEvent(new MouseEvent(evt, { bubbles: true, cancelable: true, view: window }));
+              });
+            }
             break;
           }
         }
-      } else {
-        // Quảng cáo đã kết thúc -> Khôi phục trạng thái chuẩn
-        if (adFastForwardActive) {
-          adFastForwardActive = false;
-          video.playbackRate = 1.0;
+      } else if (adFastForwardActive) {
+        adFastForwardActive = false;
+        try {
+          video.playbackRate = 1;
           video.muted = userMutedState;
-        }
+        } catch {}
       }
     }
 

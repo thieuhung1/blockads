@@ -1,11 +1,17 @@
 // NetShield Warning Interstitial Controller
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+  // 0. Anti-Clickjacking: block framing/embedding completely
+  if (window.top !== window) {
+    document.body.innerHTML = '<div style="padding:40px;color:#ef4444;font-family:sans-serif;text-align:center;"><h2>Cảnh Báo Bảo Mật NetShield</h2><p>Trang cảnh báo không được phép nhúng trong khung (frame) của trang web khác.</p></div>';
+    throw new Error('Clickjacking frame blocked');
+  }
+
   const blockedUrlDisplay = document.getElementById('blockedUrlDisplay');
   const btnGoBack = document.getElementById('btnGoBack');
   const btnProceedAnyway = document.getElementById('btnProceedAnyway');
 
-  let blockedUrl = '';
+  let blockedUrl = null;
 
   function getSafeHttpUrl(raw) {
     if (!raw || typeof raw !== 'string') return null;
@@ -18,22 +24,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     return null;
   }
 
-  // 1. Try to read from query params or storage
-  const urlParams = new URLSearchParams(window.location.search);
-  const paramUrl = urlParams.get('url');
-
-  if (paramUrl && getSafeHttpUrl(paramUrl)) {
-    blockedUrl = getSafeHttpUrl(paramUrl);
-  } else {
-    try {
-      const data = await chrome.storage.local.get(['lastBlockedScamUrl']);
-      blockedUrl = getSafeHttpUrl(data.lastBlockedScamUrl) || 'https://unknown-threat-target.xyz';
-    } catch {
-      blockedUrl = 'https://unknown-threat-target.xyz';
+  // 1. Extract blocked URL directly from location search & hash (preserves full & query params and # fragments)
+  function extractBlockedUrlFromLocation() {
+    const search = window.location.search || '';
+    const hash = window.location.hash || '';
+    const prefix = '?url=';
+    const index = search.indexOf(prefix);
+    if (index !== -1) {
+      const raw = search.substring(index + prefix.length) + hash;
+      return getSafeHttpUrl(raw);
     }
+    return null;
   }
 
-  blockedUrlDisplay.textContent = blockedUrl;
+  blockedUrl = extractBlockedUrlFromLocation();
+
+  if (blockedUrl) {
+    // Render URL using textContent to prevent any XSS
+    blockedUrlDisplay.textContent = blockedUrl;
+
+    // Notify background for accurate production metrics (DNR redirects do not fire onErrorOccurred in store builds)
+    chrome.runtime.sendMessage({
+      type: 'RECORD_SCAM_BLOCKED',
+      url: blockedUrl
+    }).catch(() => {});
+  } else {
+    blockedUrlDisplay.textContent = 'Không thể xác định địa chỉ trang web đích.';
+    btnProceedAnyway.disabled = true;
+    btnProceedAnyway.style.opacity = '0.5';
+    btnProceedAnyway.style.cursor = 'not-allowed';
+    btnProceedAnyway.title = 'Không có địa chỉ hợp lệ để tiếp tục';
+  }
 
   // 2. Action: Go Back to Safety
   btnGoBack.addEventListener('click', () => {
@@ -46,30 +67,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 3. Action: Bypass warning
   btnProceedAnyway.addEventListener('click', async () => {
+    if (!blockedUrl) return;
+
     const confirmed = confirm('CẢNH BÁO NGUY HIỂM: Bạn có chắc chắn muốn truy cập vào trang này? Trang web có thể cố gắng lừa đảo hoặc cài mã độc vào thiết bị của bạn!');
     if (!confirmed) return;
 
-    const safeDestination = getSafeHttpUrl(blockedUrl);
-    if (!safeDestination) {
-      alert('Địa chỉ không an toàn hoặc không hợp lệ.');
-      window.location.href = 'https://www.google.com';
+    const hostname = new URL(blockedUrl).hostname.toLowerCase();
+
+    // Add to temporary session bypass list
+    const res = await chrome.runtime.sendMessage({
+      type: 'BYPASS_SCAM_DOMAIN',
+      domain: hostname
+    });
+
+    if (!res?.success) {
+      alert('Không thể mở khóa tên miền này: ' + (res?.error || 'Lỗi không xác định'));
       return;
     }
 
-    try {
-      const parsed = new URL(safeDestination);
-      const hostname = parsed.hostname.toLowerCase();
-
-      // Add to temporary bypass list
-      await chrome.runtime.sendMessage({
-        type: 'BYPASS_SCAM_DOMAIN',
-        domain: hostname
-      });
-
-      // Redirect user to the validated safe destination
-      window.location.href = safeDestination;
-    } catch {
-      window.location.href = 'https://www.google.com';
-    }
+    // Redirect user to the validated safe destination
+    window.location.href = blockedUrl;
   });
 });

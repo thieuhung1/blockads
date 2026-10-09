@@ -1,5 +1,5 @@
-// NetShield Pro - YouTube High-Efficiency Main World Engine
-// Runs directly in the YouTube page context (MAIN world) to intercept player API data & force instant ad skips
+// NetShield Pro - YouTube Main World Engine (safe mode)
+// Chỉ loại bỏ field quảng cáo, KHÔNG tạo lại Response → tránh màn hình đen
 
 (function () {
   'use strict';
@@ -7,214 +7,187 @@
   if (window.__netshield_yt_injected) return;
   window.__netshield_yt_injected = true;
 
-  // --- 1. Sanitize Initial Player Response (Eliminates prerolls & midrolls before render) ---
-  function sanitizePlayerResponse(obj) {
+  // --- 1. Chỉ xóa field quảng cáo, giữ nguyên toàn bộ dữ liệu phát video ---
+  function stripAds(obj) {
     if (!obj || typeof obj !== 'object') return obj;
-
-    if (obj.adPlacements) delete obj.adPlacements;
-    if (obj.playerAds) delete obj.playerAds;
-    if (obj.adSlots) delete obj.adSlots;
-    if (obj.adBreakHeartbeatParams) delete obj.adBreakHeartbeatParams;
-
+    try {
+      if (obj.adPlacements) delete obj.adPlacements;
+      if (obj.playerAds) delete obj.playerAds;
+      if (obj.adSlots) delete obj.adSlots;
+      if (obj.adBreakHeartbeatParams) delete obj.adBreakHeartbeatParams;
+      // Một số bản YouTube đặt ads trong streamingData
+      if (obj.streamingData && obj.streamingData.adPlacements) {
+        delete obj.streamingData.adPlacements;
+      }
+    } catch (e) { }
     return obj;
   }
 
-  // Intercept window.ytInitialPlayerResponse
-  let _ytInitialPlayerResponse = window.ytInitialPlayerResponse;
-  Object.defineProperty(window, 'ytInitialPlayerResponse', {
-    get: () => _ytInitialPlayerResponse,
-    set: (val) => {
-      _ytInitialPlayerResponse = sanitizePlayerResponse(val);
-    },
-    configurable: true
-  });
+  // Intercept ytInitialPlayerResponse (an toàn – chỉ mutate object sẵn có)
+  try {
+    let _pr = window.ytInitialPlayerResponse;
+    Object.defineProperty(window, 'ytInitialPlayerResponse', {
+      get: () => _pr,
+      set: (val) => { _pr = stripAds(val); },
+      configurable: true
+    });
+    if (window.ytInitialPlayerResponse) {
+      stripAds(window.ytInitialPlayerResponse);
+    }
+  } catch (e) { }
 
-  if (window.ytInitialPlayerResponse) {
-    window.ytInitialPlayerResponse = sanitizePlayerResponse(window.ytInitialPlayerResponse);
-  }
-
-  // --- 2. Intercept fetch API for /youtubei/v1/player ---
+  // --- 2. Fetch: CHỈ chặn endpoint ad_break / log ad, KHÔNG đụng /player chính ---
   const originalFetch = window.fetch;
   window.fetch = async function (...args) {
-    const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+    let url = '';
+    try {
+      url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+    } catch (e) { }
 
-    // Block ad telemetry / logging calls & ad breaks
+    // Chỉ stub các request quảng cáo thuần, không đụng player response
     if (
       url.includes('/youtubei/v1/player/ad_break') ||
-      (url.includes('/youtubei/v1/log_event') && args[1] && typeof args[1].body === 'string' && args[1].body.includes('ad'))
+      url.includes('/youtubei/v1/log_event') &&
+      args[1] &&
+      typeof args[1].body === 'string' &&
+      /"ad"|adBreak|adPlacement/i.test(args[1].body)
     ) {
-      return new Response(JSON.stringify({}), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    }
-
-    const response = await originalFetch.apply(this, args);
-
-    if (url.includes('/youtubei/v1/player')) {
-      try {
-        const clone = response.clone();
-        const data = await clone.json();
-        const sanitized = sanitizePlayerResponse(data);
-        return new Response(JSON.stringify(sanitized), {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers
-        });
-      } catch (e) {
-        return response;
-      }
-    }
-
-    return response;
-  };
-
-  // --- 3. Intercept XMLHttpRequest for /youtubei/v1/player ---
-  const originalOpen = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-    this._netshield_url = url;
-    return originalOpen.call(this, method, url, ...rest);
-  };
-
-  const originalSend = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.send = function (...args) {
-    if (this._netshield_url && typeof this._netshield_url === 'string' && this._netshield_url.includes('/youtubei/v1/player')) {
-      this.addEventListener('readystatechange', function () {
-        if (this.readyState === 4 && this.status === 200) {
-          try {
-            const data = JSON.parse(this.responseText);
-            const sanitized = sanitizePlayerResponse(data);
-            Object.defineProperty(this, 'responseText', {
-              value: JSON.stringify(sanitized),
-              configurable: true
-            });
-            Object.defineProperty(this, 'response', {
-              value: JSON.stringify(sanitized),
-              configurable: true
-            });
-          } catch (e) {}
-        }
+      return new Response('{}', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
       });
     }
-    return originalSend.apply(this, args);
+
+    // Để nguyên mọi request khác (kể cả /youtubei/v1/player)
+    return originalFetch.apply(this, args);
   };
 
-  // --- 4. Direct Movie Player Controller & Realtime Ad Skip Hook ---
+  // --- 3. Không còn intercept XHR responseText của /player (tránh phá stream) ---
+  // (Giữ nguyên XHR gốc)
+
+  // --- 4. Skip quảng cáo an toàn – chỉ khi chắc chắn đang ad ---
   let isSkipping = false;
   let userMutedState = false;
 
-  function fastForwardAndSkip() {
-    const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
-    const video = document.querySelector('video.html5-main-video') || document.querySelector('video');
+  function isDefinitelyAd(player, video) {
+    if (!player || !video) return false;
 
-    if (!player || !video) return;
-
-    // Check all possible YouTube ad indicators
-    const isAd = player.classList.contains('ad-showing') ||
-                 player.classList.contains('ad-interrupting') ||
-                 (typeof player.getAdState === 'function' && player.getAdState() > 0) ||
-                 !!document.querySelector('.ytp-ad-player-overlay') ||
-                 !!document.querySelector('.ytp-ad-player-overlay-layout') ||
-                 !!document.querySelector('.ytp-ad-module > *') ||
-                 !!document.querySelector('.ytp-ad-text') ||
-                 !!document.querySelector('.ytp-ad-preview-text');
-
-    if (isAd) {
-      if (!isSkipping) {
-        isSkipping = true;
-        userMutedState = video.muted;
-        video.muted = true;
+    // Ưu tiên API nội bộ của player
+    try {
+      if (typeof player.getAdState === 'function' && player.getAdState() > 0) {
+        return true;
       }
+    } catch (e) { }
 
-      // Boost speed to 16x
+    const hasAdClass =
+      player.classList.contains('ad-showing') ||
+      player.classList.contains('ad-interrupting');
+
+    // Overlay quảng cáo thật sự
+    const hasOverlay =
+      !!document.querySelector('.ytp-ad-player-overlay:not([style*="display: none"])') ||
+      !!document.querySelector('.ytp-ad-player-overlay-layout') ||
+      !!document.querySelector('.ytp-ad-text') ||
+      !!document.querySelector('.ytp-ad-preview-text') ||
+      !!document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
+
+    // Tránh false-positive: nếu video đang phát nội dung dài và không có overlay → không coi là ad
+    if (hasAdClass && hasOverlay) return true;
+    if (hasAdClass && typeof player.getAdState === 'function') {
       try {
-        video.playbackRate = 16.0;
-      } catch (e) {}
-
-      // Call internal movie_player API if available
-      try {
-        if (typeof player.skipAd === 'function') {
-          player.skipAd();
-        }
-      } catch (e) {}
-
-      // Jump to end of ad video
-      try {
-        if (Number.isFinite(video.duration) && video.duration > 0) {
-          video.currentTime = video.duration;
-        } else {
-          video.currentTime = 999999;
-        }
-      } catch (e) {}
-
-      // Ensure playback doesn't stall
-      if (video.paused) {
-        video.play().catch(() => {});
-      }
-
-      // Click all skip buttons
-      clickSkipButtons();
-    } else {
-      if (isSkipping) {
-        isSkipping = false;
-        video.playbackRate = 1.0;
-        video.muted = userMutedState;
-      }
+        return player.getAdState() > 0;
+      } catch (e) { }
     }
+    return hasAdClass && hasOverlay;
   }
 
   function clickSkipButtons() {
-    const skipSelectors = [
+    const selectors = [
       '.ytp-ad-skip-button',
       '.ytp-ad-skip-button-modern',
       '.ytp-skip-ad-button',
       '.ytp-ad-skip-button-slot button',
       '.ytp-ad-preview-container button',
       '.ytp-ad-skip-button-container button',
-      'button.ytp-ad-skip-button-modern',
-      '.ytp-ad-skip-button-text',
-      '.ytp-ad-survey-answer-button'
+      'button.ytp-ad-skip-button-modern'
     ];
-
-    for (const sel of skipSelectors) {
+    for (const sel of selectors) {
       const btn = document.querySelector(sel);
-      if (btn) {
-        ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach(evtType => {
-          btn.dispatchEvent(new MouseEvent(evtType, { bubbles: true, cancelable: true, view: window }));
-        });
+      if (btn && btn.offsetParent !== null) {
+        try {
+          btn.click();
+        } catch (e) {
+          ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach((t) => {
+            btn.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window }));
+          });
+        }
         break;
       }
     }
   }
 
-  // Run at high frequency for instant reaction (50ms interval)
-  setInterval(fastForwardAndSkip, 50);
+  function fastForwardAndSkip() {
+    const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+    const video = document.querySelector('video.html5-main-video') || document.querySelector('#movie_player video');
 
-  // Hook into video ratechange & play to counter YouTube's attempt to slow ads down
-  document.addEventListener('ratechange', (e) => {
-    const player = document.getElementById('movie_player');
-    if (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) {
-      const video = e.target;
-      if (video && video.playbackRate !== 16.0) {
-        video.playbackRate = 16.0;
-        video.muted = true;
+    if (!player || !video) return;
+
+    if (isDefinitelyAd(player, video)) {
+      if (!isSkipping) {
+        isSkipping = true;
+        userMutedState = video.muted;
+        try { video.muted = true; } catch (e) { }
       }
-    }
-  }, true);
 
-  // Clean anti-adblock modals in main world as well
+      // Chỉ tua nhanh, không nhảy currentTime nếu duration bất thường (tránh phá video chính)
+      try {
+        if (video.playbackRate < 8) video.playbackRate = 16;
+      } catch (e) { }
+
+      try {
+        if (typeof player.skipAd === 'function') player.skipAd();
+      } catch (e) { }
+
+      // Chỉ seek khi duration hợp lệ và khá ngắn (quảng cáo thường < 60–120s)
+      try {
+        const d = video.duration;
+        if (Number.isFinite(d) && d > 0 && d < 120) {
+          video.currentTime = d;
+        }
+      } catch (e) { }
+
+      if (video.paused) {
+        video.play().catch(() => { });
+      }
+
+      clickSkipButtons();
+    } else if (isSkipping) {
+      isSkipping = false;
+      try {
+        video.playbackRate = 1;
+        video.muted = userMutedState;
+      } catch (e) { }
+    }
+  }
+
+  // Poll nhẹ hơn (150ms) để giảm tải
+  setInterval(fastForwardAndSkip, 150);
+
+  // Gỡ popup anti-adblock
   setInterval(() => {
     const dialogs = document.querySelectorAll(
-      'tp-yt-paper-dialog:has(ytd-enforcement-message-view-model), ytd-enforcement-message-view-model'
+      'ytd-enforcement-message-view-model, tp-yt-paper-dialog:has(ytd-enforcement-message-view-model)'
     );
-    if (dialogs.length > 0) {
-      dialogs.forEach(d => {
+    if (dialogs.length) {
+      dialogs.forEach((d) => {
         const parent = d.closest('tp-yt-paper-dialog') || d;
-        parent.remove();
+        try { parent.remove(); } catch (e) { }
       });
-      document.querySelectorAll('tp-yt-iron-overlay-backdrop').forEach(b => b.remove());
-      const video = document.querySelector('video.html5-main-video') || document.querySelector('video');
-      if (video && video.paused) {
-        video.play().catch(() => {});
-      }
+      document.querySelectorAll('tp-yt-iron-overlay-backdrop').forEach((b) => {
+        try { b.remove(); } catch (e) { }
+      });
+      const video = document.querySelector('video.html5-main-video') || document.querySelector('#movie_player video');
+      if (video && video.paused) video.play().catch(() => { });
     }
-  }, 200);
-
+  }, 400);
 })();
