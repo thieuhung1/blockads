@@ -45,25 +45,32 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/*"],
-      "js": ["content/yt_main_world.js"],
+      "matches": ["<all_urls>"],
+      "js": [
+        "content/config.js",
+        "content/logger.js",
+        "content/modules/privacy-shield.js",
+        "content/main-world-entry.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     },
     {
       "matches": ["<all_urls>"],
-      "js": ["content/content.js"],
+      "js": [
+        "content/config.js",
+        "content/logger.js",
+        "content/modules/privacy-shield.js",
+        "content/modules/anti-scam.js",
+        "content/modules/cosmetic-filter.js",
+        "content/modules/youtube-blocker.js",
+        "content/content.js"
+      ],
       "css": ["content/content.css"],
       "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
-    {
-      "resources": [
-        "content/yt_main_world.js"
-      ],
-      "matches": ["*://*.youtube.com/*"]
-    },
     {
       "resources": [
         "warning/warning.html",

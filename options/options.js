@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     ipAdShieldEnabled: true,
     webrtcProtectionEnabled: true,
     cosmeticFiltering: true,
+    developerMode: false,
     totalBlocked: 0,
     totalScamBlocked: 0,
     totalTrackingBlocked: 0,
@@ -69,6 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const importFileInput = document.getElementById('importFileInput');
   const backupFeedback = document.getElementById('backupFeedback');
   const btnResetAll = document.getElementById('btnResetAll');
+  const developerModeToggle = document.getElementById('developerModeToggle');
 
   // 1. Navigation logic
   navItems.forEach(item => {
@@ -98,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderWhitelist();
       }
     } catch (err) {
-      console.warn('Error loading state from service worker:', err);
+      if (appState.developerMode) console.warn('Error loading state from service worker:', err);
     }
   }
 
@@ -123,6 +125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dashIpShieldToggle) dashIpShieldToggle.checked = appState.ipAdShieldEnabled !== false;
     if (dashWebRTCToggle) dashWebRTCToggle.checked = appState.webrtcProtectionEnabled !== false;
     dashCosmeticToggle.checked = appState.cosmeticFiltering;
+    developerModeToggle.checked = appState.developerMode === true;
   }
 
   // Overview Listeners
@@ -167,6 +170,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const val = dashCosmeticToggle.checked;
     await chrome.runtime.sendMessage({ type: 'TOGGLE_COSMETIC', enabled: val });
     appState.cosmeticFiltering = val;
+  });
+
+  developerModeToggle.addEventListener('change', async () => {
+    const val = developerModeToggle.checked;
+    const response = await chrome.runtime.sendMessage({ type: 'TOGGLE_DEVELOPER_MODE', enabled: val });
+    if (response && response.success) appState.developerMode = val;
+    else developerModeToggle.checked = appState.developerMode === true;
   });
 
   btnResetStats.addEventListener('click', async () => {
@@ -490,7 +500,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
       });
     } catch (err) {
-      console.warn('Inspector error:', err);
+      if (appState.developerMode) console.warn('Inspector error:', err);
     }
   }
 

@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let isAntiScamEnabled = true;
   let isAntiTrackingEnabled = true;
   let isIpShieldEnabled = true;
+  let isDeveloperModeEnabled = false;
 
   // DOM Elements
   const masterToggleBtn = document.getElementById('masterToggleBtn');
@@ -66,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   } catch (err) {
-    console.error('Error fetching tab:', err);
+    if (isDeveloperModeEnabled) console.error('Error fetching tab:', err);
   }
 
   // 2. Load state from Background
@@ -79,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (!response || !response.success) return;
 
+      isDeveloperModeEnabled = response.developerMode === true;
       isMasterEnabled = response.enabled;
       isAntiScamEnabled = response.antiScamEnabled;
       isAntiTrackingEnabled = response.antiTrackingEnabled;
@@ -121,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Recent blocked list
       renderRecentBlocked(response.recentBlocked || []);
     } catch (err) {
-      console.warn('Background communication error:', err);
+      if (isDeveloperModeEnabled) console.warn('Background communication error:', err);
     }
   }
 
@@ -282,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
       });
     } catch (err) {
-      console.warn('Error loading live requests:', err);
+      if (isDeveloperModeEnabled) console.warn('Error loading live requests:', err);
     }
   }
 

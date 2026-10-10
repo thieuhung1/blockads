@@ -1,6 +1,7 @@
 // NetShield DeclarativeNetRequest Dynamic Rules & Session Bypass Engine
 
 import { ALL, SUB, host, isValidWhitelistDomain } from './constants.js';
+import { logger } from './logger.js';
 
 // Synchronize all declarative dynamic rules with category batching and graceful fallback
 export async function doSyncDynamicRules(S) {
@@ -11,7 +12,7 @@ export async function doSyncDynamicRules(S) {
       disableRulesetIds: S.enabled ? [] : ['ruleset_default']
     });
   } catch (err) {
-    console.warn('[NetShield] updateEnabledRulesets error:', err);
+    logger.error('Could not update enabled static rulesets.', err);
   }
 
   // 2. Fetch existing dynamic rules to clear
@@ -226,14 +227,15 @@ export async function doSyncDynamicRules(S) {
   // --- Apply: batch atomic trước, nếu fail thì per-rule để cô lập rule lỗi ---
   try {
     await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules: rules });
-    console.log(`[NetShield] Dynamic rules synced (${rules.length} rules active)`);
+    logger.debug(`Dynamic rules synced (${rules.length} active).`);
   } catch (err) {
-    console.warn('[NetShield] Batch rule update rejected:', err.message);
-    console.warn('[NetShield] Fallback: applying rules one-by-one so one bad rule cannot disable the entire shield');
+    logger.warn('Batch rule update rejected; applying rules individually.', err.message);
 
     try {
       await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules: [] });
-    } catch { }
+    } catch (clearError) {
+      logger.debug('Could not clear existing dynamic rules before fallback.', clearError);
+    }
 
     let applied = 0;
     let skipped = 0;
@@ -243,10 +245,10 @@ export async function doSyncDynamicRules(S) {
         applied++;
       } catch (e) {
         skipped++;
-        console.warn(`[NetShield] Skipped rule id=${r.id} priority=${r.priority} (${r.action.type}):`, e.message);
+        logger.warn(`Skipped rule id=${r.id}, priority=${r.priority}, action=${r.action.type}.`, e.message);
       }
     }
-    console.log(`[NetShield] Applied ${applied}/${rules.length} rules, ${skipped} skipped`);
+    logger.debug(`Applied ${applied}/${rules.length} rules; ${skipped} skipped.`);
   }
 }
 
@@ -273,5 +275,5 @@ export async function addSessionBypassRule(targetHost, tabId) {
       }
     ]
   });
-  console.log(`[NetShield] Session bypass added for ${targetHost} on tab ${tabId || 'all'}`);
+  logger.debug(`Session bypass added for ${targetHost} on tab ${tabId || 'all'}.`);
 }

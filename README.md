@@ -23,7 +23,7 @@ Tính năng này bảo vệ tuyệt đối quyền riêng tư và dữ liệu nh
 - **Chống Đọc Trộm Bộ Nhớ Tạm (Anti-Clipboard Sniffing)**:
   - Chặn đứng các đoạn mã JavaScript độc hại tự động đọc dữ liệu trong Clipboard (`navigator.clipboard.readText`) để đánh cắp mật khẩu, mã OTP, số thẻ tín dụng hoặc địa chỉ ví tiền điện tử mà bạn vừa sao chép.
 - **Chống Lấy Dấu Vân Tay Trình Duyệt (Anti-Canvas Fingerprinting)**:
-  - Tự động gây nhiễu vi lượng các hàm render đồ họa Canvas (`toDataURL` / `getImageData`) để các công ty quảng cáo và nhà môi giới dữ liệu (Data Brokers, FingerprintJS) không thể tạo mã định danh duy nhất theo dõi bạn qua các trang web khác nhau.
+  - Gây nhiễu một số pixel khi trang đọc Canvas qua `toDataURL`, `toBlob` hoặc `getImageData`, nhằm giảm độ ổn định của dấu vân tay Canvas.
 - **Tự Động Bật Tín Hiệu Không Theo Dõi (Do Not Track & Global Privacy Control)**:
   - Tự động kích hoạt các header và thuộc tính `DNT: 1` và `Sec-GPC: 1` để thông báo cho máy chủ từ chối việc bán hoặc chia sẻ dữ liệu của bạn.
 - **Giấu Thông Tin Pin & Phần Cứng**:
@@ -34,8 +34,8 @@ Tính năng này bảo vệ tuyệt đối quyền riêng tư và dữ liệu nh
 ## 🎬 2. Bộ Tối Ưu Chặn Quảng Cáo YouTube Chuyên Sâu Cấp Độc Quyền (YouTube Turbo Engine)
 
 YouTube liên tục cập nhật công nghệ chống trình chặn quảng cáo (chèn quảng cáo từ máy chủ, quảng cáo Shorts, popup cảnh báo 3 video). NetShield Pro đã được nâng cấp hệ thống chặn 2 tầng cực kỳ mạnh mẽ:
-- **Can Thiệp Tầng Dữ Liệu Gốc Của Trình Phát (MAIN World Player Data Sanitizer)**: Can thiệp trực tiếp vào API `fetch` & `XMLHttpRequest` của YouTube đối với endpoint `/youtubei/v1/player`, bóc tách sạch sẽ toàn bộ các khối dữ liệu `adPlacements`, `playerAds`, `adSlots` trước khi trình phát kịp khởi tạo quảng cáo.
-- **Tua Nhanh & Tự Động Bỏ Qua Video Ads (16x Turbo Fast-Forward & Instant Skip)**: Khi phát hiện video quảng cáo hoặc bumper ads, tự động tăng tốc lên **16x**, tua thẳng về cuối trong **0.01 giây**, tắt tiếng tức thì và mô phỏng chuỗi sự kiện chuột đa tầng bấm bỏ qua.
+- **Theo dõi trạng thái trình phát theo sự kiện**: Chạy khi YouTube hoàn tất điều hướng SPA hoặc khi class của `#movie_player` đổi; không polling theo chu kỳ.
+- **Bỏ qua quảng cáo**: Bấm nút Skip khi có thể, hoặc tua đến sát cuối quảng cáo khi player đang ở trạng thái quảng cáo.
 - **Tự Động Bỏ Qua Quảng Cáo Trong YouTube Shorts (Auto Shorts Ad Skip)**: Nhận diện các clip ngắn được tài trợ/quảng cáo trong mục Shorts và tự động cuộn lướt qua video tiếp theo.
 - **Tự Động Tắt Popup Cảnh Báo Của YouTube (Anti-Enforcement Dismissal)**: Tự động gỡ bỏ bảng thông báo *"Trình chặn quảng cáo vi phạm Điều khoản dịch vụ của YouTube"*, xóa màn mờ và tự động phát tiếp video liền mạch.
 - **Xóa Sạch 100% Banner, Thẻ Gợi Ý Được Tài Trợ & Masthead Ads**: Loại bỏ hoàn toàn các khung quảng cáo trên trang chủ, danh sách video đề xuất và bảng điều khiển cạnh video.
@@ -54,6 +54,12 @@ YouTube liên tục cập nhật công nghệ chống trình chặn quảng cáo
 - **211+ Quy Tắc Tĩnh Chuẩn Declarative Net Request**: Chặn Google AdSense, DoubleClick, Facebook Trackers, PopAds, Admicro, Eclick, mã độc đào coin...
 - **Chặn Trực Tiếp Theo Địa Chỉ IP Máy Chủ (IPv4 / IPv6)**: Nhập nhanh IP hoặc dán danh sách IP máy chủ quảng cáo để chặn tận gốc.
 - **Nhật Ký Mạng Trực Tiếp (Live Network Inspector)**: Quét các kết nối mạng thời gian thực và cho phép chặn 1-click bất kỳ máy chủ nào.
+
+## Cấu trúc mã và chẩn đoán
+
+- Content scripts được tách thành cấu hình chung và các module YouTube, privacy, anti-scam, cosmetic; `content/content.js` chỉ đọc settings và khởi tạo module.
+- Danh sách từ khóa anti-scam nằm trong object có version và nguồn tại `content/config.js`. Hiện chưa cấu hình endpoint để cập nhật rule từ server.
+- Có thể bật log chẩn đoán trong trang Cài đặt. Log mặc định tắt; thời gian và threat rules của service worker được gom trong `background/constants.js`.
 
 ---
 

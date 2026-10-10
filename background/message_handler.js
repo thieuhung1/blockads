@@ -5,6 +5,7 @@ import { flushStorageCounters, resetTelemetry, updateBadgeState, recordBlockedRe
 import { applyWebRTCProtection } from './webrtc.js';
 import { host, isValidWhitelistDomain } from './constants.js';
 import { addSessionBypassRule } from './rules.js';
+import { setDeveloperMode } from './logger.js';
 
 export async function handleMessage(message, sender) {
   // Allow safe content script query for cosmetic filtering flag
@@ -58,6 +59,16 @@ export async function handleMessage(message, sender) {
         await chrome.storage.local.set({ cosmeticFiltering: val });
       });
       return { success: true, cosmeticFiltering: val };
+    }
+
+    case 'TOGGLE_DEVELOPER_MODE': {
+      const val = Boolean(message.enabled);
+      await mutate(async () => {
+        S.developerMode = val;
+        await chrome.storage.local.set({ developerMode: val });
+        setDeveloperMode(val);
+      });
+      return { success: true, developerMode: val };
     }
 
     case 'TOGGLE_WEBRTC_PROTECTION': {

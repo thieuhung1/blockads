@@ -11,6 +11,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnGoBack = document.getElementById('btnGoBack');
   const btnProceedAnyway = document.getElementById('btnProceedAnyway');
 
+  let developerModeEnabled = false;
+  chrome.storage.local.get('developerMode', settings => {
+    if (!chrome.runtime.lastError) developerModeEnabled = settings?.developerMode === true;
+  });
+
+  function debugLog(message, error) {
+    if (developerModeEnabled) console.debug('[NetShield]', message, error);
+  }
+
   let blockedUrl = null;
 
   function getSafeHttpUrl(raw) {
@@ -20,7 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
         return parsed.href;
       }
-    } catch {}
+    } catch (error) {
+      debugLog('Could not parse a destination URL.', error);
+    }
     return null;
   }
 
@@ -47,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.runtime.sendMessage({
       type: 'RECORD_SCAM_BLOCKED',
       url: blockedUrl
-    }).catch(() => {});
+    }).catch(error => debugLog('Could not record the blocked scam navigation.', error));
   } else {
     blockedUrlDisplay.textContent = 'Không thể xác định địa chỉ trang web đích.';
     btnProceedAnyway.disabled = true;

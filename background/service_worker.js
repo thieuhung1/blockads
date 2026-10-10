@@ -6,10 +6,11 @@ import { doSyncDynamicRules } from './rules.js';
 import { applyWebRTCProtection } from './webrtc.js';
 import { updateBadgeState, recordBlockedRequest, clearTabBlockRate } from './telemetry.js';
 import { handleMessage } from './message_handler.js';
+import { logger } from './logger.js';
 
 // Lifecycle Event Listeners
 chrome.runtime.onInstalled.addListener(async (details) => {
-  console.log('[NetShield] Installed/Updated:', details.reason);
+  logger.debug('Installed or updated:', details.reason);
   await ensureInitialized();
   await mutate(async () => {
     await chrome.storage.local.set(S);
@@ -20,7 +21,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  console.log('[NetShield] Startup');
+  logger.debug('Service worker started.');
   await ensureInitialized();
   // Dynamic rules and static rulesets are already persisted across browser restarts
   await applyWebRTCProtection(S.webrtcProtectionEnabled);
@@ -138,7 +139,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   })()
     .then(sendResponse)
     .catch((err) => {
-      console.error('[NetShield] handleMessage error:', err);
+      logger.error('Message handler failed.', err);
       sendResponse({ success: false, error: err?.message || String(err) });
     });
   return true;

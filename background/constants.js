@@ -7,6 +7,28 @@ export const ALL = [
 
 export const SUB = ALL.slice(1); // Subresource types (excludes main_frame)
 
+export const TIMING = Object.freeze({
+  sessionSaveDebounceMs: 1000,
+  telemetryDedupeWindowMs: 1500,
+  telemetryRateWindowMs: 1000,
+  telemetryFlushDebounceMs: 800,
+  telemetryMaxDedupeEntries: 200,
+  telemetryMaxEventsPerTabWindow: 10
+});
+
+export const THREAT_RULES = Object.freeze({
+  version: 1,
+  source: 'bundled',
+  scamHostKeywords: Object.freeze([
+    'vietcombank-online', 'vneid-dinhdanh', 'urgent-security', 'airdrop-claim', 'trungthuong'
+  ]),
+  trackerHosts: Object.freeze([
+    'hotjar.com', 'clarity.ms', 'fullstory.com', 'mouseflow.com', 'smartlook.com', 'google-analytics.com'
+  ]),
+  scamPathPattern: /(?:[/?#&._-]|^)(phishing-target|vietcombank-login|fake-login)(?:[/?#&._-]|$)/i,
+  trackerPathPattern: /(?:[/?#&._-]|^)(analytics|telemetry|fingerprint|stat|counter|pixel)(?:[/?#&._-]|$)/i
+});
+
 // Public suffixes and multi-tenant platforms: whitelisting these directly is strictly forbidden
 export const PUBLIC_SUFFIXES = new Set([
   'com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'io', 'co', 'ai', 'app', 'dev', 'vn', 'me', 'info', 'biz', 'top', 'xyz', 'site', 'online',
@@ -38,6 +60,7 @@ export const DEFAULTS = {
   ipAdShieldEnabled: true,
   webrtcProtectionEnabled: true,
   cosmeticFiltering: true,
+  developerMode: false,
   totalBlocked: 0,
   totalScamBlocked: 0,
   totalTrackingBlocked: 0,

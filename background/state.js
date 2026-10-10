@@ -1,7 +1,8 @@
 // NetShield State Management, Synchronization & Atomic Mutation Queue
 
-import { DEFAULTS } from './constants.js';
+import { DEFAULTS, TIMING } from './constants.js';
 import { doSyncDynamicRules } from './rules.js';
+import { logger, setDeveloperMode } from './logger.js';
 
 // Global in-memory configuration state
 export let S = { ...DEFAULTS };
@@ -10,12 +11,20 @@ export let S = { ...DEFAULTS };
 export let tabBlockStats = {}; // { tabId: count }
 export let liveNetworkRequests = []; // Circular buffer
 
+if (chrome.storage && chrome.storage.onChanged) {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local' || !Object.prototype.hasOwnProperty.call(changes, 'developerMode')) return;
+    S.developerMode = changes.developerMode.newValue === true;
+    setDeveloperMode(S.developerMode);
+  });
+}
+
 // Global mutation queue: ensures all configuration mutations and rule syncs run strictly serialized
 let actionQueue = Promise.resolve();
 export function mutate(task) {
   const p = actionQueue.then(task);
   actionQueue = p.catch(err => {
-    console.error('[NetShield] Action queue execution error:', err);
+    logger.error('Action queue execution error.', err);
   });
   return p;
 }
@@ -34,7 +43,9 @@ export const commit = fn => mutate(async () => {
     try {
       await chrome.storage.local.set(prev);
       await doSyncDynamicRules(S);
-    } catch {}
+    } catch (rollbackError) {
+      logger.debug('Configuration rollback failed.', rollbackError);
+    }
     throw err;
   }
 });
@@ -50,6 +61,7 @@ export async function ensureInitialized() {
       try {
         const stored = await chrome.storage.local.get(DEFAULTS);
         S = stored;
+        setDeveloperMode(stored.developerMode);
 
         if (chrome.storage && chrome.storage.session) {
           try {
@@ -57,7 +69,9 @@ export async function ensureInitialized() {
             if (sess.tabBlockStats && typeof sess.tabBlockStats === 'object') {
               tabBlockStats = sess.tabBlockStats;
             }
-          } catch {}
+          } catch (error) {
+            logger.debug('Could not restore session tab statistics.', error);
+          }
         }
         isInitialized = true;
       } catch (err) {
@@ -78,7 +92,9 @@ export function scheduleSaveSessionState() {
     if (chrome.storage && chrome.storage.session) {
       try {
         await chrome.storage.session.set({ tabBlockStats });
-      } catch {}
+      } catch (error) {
+        logger.debug('Could not persist session tab statistics.', error);
+      }
     }
-  }, 1000);
+  }, TIMING.sessionSaveDebounceMs);
 }

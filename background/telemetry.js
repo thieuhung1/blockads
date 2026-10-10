@@ -1,7 +1,8 @@
 // NetShield Telemetry, Threat Heuristics, Rate-Limiting & Badge Management
 
 import { S, tabBlockStats, liveNetworkRequests, scheduleSaveSessionState } from './state.js';
-import { normalizeUrl, MAX_RECENT_BLOCKED } from './constants.js';
+import { normalizeUrl, MAX_RECENT_BLOCKED, THREAT_RULES, TIMING } from './constants.js';
+import { logger } from './logger.js';
 
 // Rate-limiting and deduplication maps
 const recentBlockedDedupeMap = new Map(); // key `${tabId}:${normalizedUrl}` -> timestamp
@@ -30,7 +31,7 @@ export async function updateBadgeState() {
         chrome.action.setBadgeBackgroundColor({ color: '#64748b' });
       }
     } catch (err) {
-      console.warn('[NetShield] updateBadgeState error:', err);
+      logger.error('Could not update the extension badge.', err);
     }
   }
 }
@@ -38,13 +39,12 @@ export async function updateBadgeState() {
 // Threat heuristics for telemetry categorization
 export function isScamThreat(url, hostname) {
   const h = (hostname || '').toLowerCase();
-  const scamHostKeywords = ['vietcombank-online', 'vneid-dinhdanh', 'urgent-security', 'airdrop-claim', 'trungthuong'];
-  if (scamHostKeywords.some(k => h.includes(k))) return true;
+  if (THREAT_RULES.scamHostKeywords.some(keyword => h.includes(keyword))) return true;
 
   try {
     const parsed = new URL(url);
     const pathAndQuery = (parsed.pathname + parsed.search).toLowerCase();
-    return /(?:[/?#&._-]|^)(phishing-target|vietcombank-login|fake-login)(?:[/?#&._-]|$)/i.test(pathAndQuery);
+    return THREAT_RULES.scamPathPattern.test(pathAndQuery);
   } catch {
     return false;
   }
@@ -52,13 +52,12 @@ export function isScamThreat(url, hostname) {
 
 export function isTrackerThreat(url, hostname) {
   const h = (hostname || '').toLowerCase();
-  const trackerHosts = ['hotjar.com', 'clarity.ms', 'fullstory.com', 'mouseflow.com', 'smartlook.com', 'google-analytics.com'];
-  if (trackerHosts.some(k => h === k || h.endsWith('.' + k))) return true;
+  if (THREAT_RULES.trackerHosts.some(host => h === host || h.endsWith('.' + host))) return true;
 
   try {
     const parsed = new URL(url);
     const pathAndQuery = (parsed.pathname + parsed.search).toLowerCase();
-    return /(?:[/?#&._-]|^)(analytics|telemetry|fingerprint|stat|counter|pixel)(?:[/?#&._-]|$)/i.test(pathAndQuery);
+    return THREAT_RULES.trackerPathPattern.test(pathAndQuery);
   } catch {
     return false;
   }
@@ -70,10 +69,10 @@ function isDuplicateBlock(url, tabId) {
   const key = `${tabId}:${norm}`;
   const now = Date.now();
   if (recentBlockedDedupeMap.has(key)) {
-    if (now - recentBlockedDedupeMap.get(key) < 1500) return true;
+    if (now - recentBlockedDedupeMap.get(key) < TIMING.telemetryDedupeWindowMs) return true;
   }
   recentBlockedDedupeMap.set(key, now);
-  if (recentBlockedDedupeMap.size > 200) {
+  if (recentBlockedDedupeMap.size > TIMING.telemetryMaxDedupeEntries) {
     const oldestKey = recentBlockedDedupeMap.keys().next().value;
     recentBlockedDedupeMap.delete(oldestKey);
   }
@@ -126,14 +125,14 @@ export function recordBlockedRequest(url, type, tabId, isScam) {
   const now = Date.now();
   let allowRecent = true;
   if (tabId && tabId > 0) {
-    const rate = tabBlockRateMap.get(tabId) || { count: 0, resetTime: now + 1000 };
+    const rate = tabBlockRateMap.get(tabId) || { count: 0, resetTime: now + TIMING.telemetryRateWindowMs };
     if (now > rate.resetTime) {
       rate.count = 0;
-      rate.resetTime = now + 1000;
+      rate.resetTime = now + TIMING.telemetryRateWindowMs;
     }
     rate.count++;
     tabBlockRateMap.set(tabId, rate);
-    if (rate.count > 10) allowRecent = false;
+    if (rate.count > TIMING.telemetryMaxEventsPerTabWindow) allowRecent = false;
   }
 
   if (allowRecent) {
@@ -150,7 +149,7 @@ export function recordBlockedRequest(url, type, tabId, isScam) {
   }
 
   if (!flushTimer) {
-    flushTimer = setTimeout(flushStorageCounters, 800);
+    flushTimer = setTimeout(flushStorageCounters, TIMING.telemetryFlushDebounceMs);
   }
 }
 
@@ -196,7 +195,7 @@ async function doFlushStorageCounters() {
       recentBlocked: S.recentBlocked
     });
   } catch (err) {
-    console.error('[NetShield] Error flushing storage counters:', err);
+    logger.error('Could not flush storage counters.', err);
   }
 }
 
