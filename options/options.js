@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const res = await chrome.runtime.sendMessage({
       type: 'ADD_CUSTOM_RULE',
       target: target,
-      type: type,
+      ruleType: type,
       note: note
     });
 
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await chrome.runtime.sendMessage({
         type: 'ADD_CUSTOM_RULE',
         target: line,
-        type: type,
+        ruleType: type,
         note: 'Nhập hàng loạt'
       });
       if (res && res.success) addedCount++;
@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           await chrome.runtime.sendMessage({
             type: 'ADD_CUSTOM_RULE',
             target: target,
-            type: isIp ? 'ip' : 'domain',
+            ruleType: isIp ? 'ip' : 'domain',
             note: 'Chặn từ Live Inspector'
           });
           btn.textContent = 'Đã chặn';

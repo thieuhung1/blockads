@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await chrome.runtime.sendMessage({
         type: 'ADD_CUSTOM_RULE',
         target: target,
-        type: type,
+        ruleType: type,
         note: note
       });
       return res && res.success;

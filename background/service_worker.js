@@ -290,7 +290,11 @@ async function syncRulesWithStorage() {
         priority: 500,
         action: { type: 'allow' },
         condition: {
-          urlFilter: `||${clean}^`
+          urlFilter: `||${clean}^`,
+          resourceTypes: [
+            'main_frame', 'sub_frame', 'stylesheet', 'script', 'image',
+            'font', 'object', 'xmlhttprequest', 'ping', 'csp_report', 'media', 'websocket', 'other'
+          ]
         }
       });
     }
@@ -596,19 +600,27 @@ async function handleMessage(message, sender) {
     }
 
     case 'ADD_CUSTOM_RULE': {
-      const { target, type, note } = message;
+      const { target, note } = message;
+      const rawType = message.ruleType || message.type;
       if (!target || typeof target !== 'string') return { success: false, error: 'Thiếu mục tiêu chặn hoặc dữ liệu không hợp lệ' };
 
-      const cleanTarget = target.trim()
-        .replace(/^(https?:\/\/)/i, '')
-        .replace(/\/.*$/, '')
-        .replace(/[\r\n\t]/g, '')
-        .slice(0, 255);
+      const validTypes = ['ip', 'domain', 'scam', 'tracker', 'pattern'];
+      const candidateType = validTypes.includes(rawType) ? rawType : '';
+
+      let cleanTarget;
+      if (candidateType === 'pattern') {
+        cleanTarget = target.trim().replace(/[\r\n\t]/g, '').slice(0, 500);
+      } else {
+        cleanTarget = target.trim()
+          .replace(/^(https?:\/\/)/i, '')
+          .replace(/\/.*$/, '')
+          .replace(/[\r\n\t]/g, '')
+          .slice(0, 255);
+      }
 
       if (!cleanTarget) return { success: false, error: 'Mục tiêu không hợp lệ' };
 
-      const validTypes = ['ip', 'domain', 'scam', 'tracker', 'pattern'];
-      const resolvedType = validTypes.includes(type) ? type : (isTargetIp(cleanTarget) ? 'ip' : 'domain');
+      const resolvedType = candidateType || (isTargetIp(cleanTarget) ? 'ip' : 'domain');
 
       const { customRules, ruleIdCounter } = await chrome.storage.local.get(['customRules', 'ruleIdCounter']);
       const counter = (ruleIdCounter || DYNAMIC_RULE_START_ID) + 1;
